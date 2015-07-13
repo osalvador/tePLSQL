@@ -1,5 +1,5 @@
 # tePLSQL
-Template Engine for PLSQL. 
+Template Engine for PLSQL.
 
 tePLSQL is a template engine written completly in PLSQL, generate text output (HTML web pages, e-mails, configuration files, source code, etc.) based on templates. Templates are written with embebed Dynamic PLSQL . 
 
@@ -49,7 +49,9 @@ With Text template.
 
        DBMS_OUTPUT.put_line (p_template);
     END;
-    
+
+Result: 
+
     Hi Oscar Salvador Magallanes!
     Today 13-07-2015 is a great day!
     Username: SYS
@@ -106,6 +108,8 @@ set timing on;
 
        DBMS_OUTPUT.put_line (p_template);
     END;
+
+Result: 
 
     <!DOCTYPE html>
     <html>
