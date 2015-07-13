@@ -26,7 +26,7 @@ Download and compile TEPLSQL.pks and TEPLSQL.pkb. No schema grants are necesary.
 
 #### Basic Example
 With Text template.
-
+```plsql
     DECLARE
        p_template   VARCHAR2(32000);
        p_vars       teplsql.t_assoc_array;
@@ -49,6 +49,7 @@ With Text template.
 
        DBMS_OUTPUT.put_line (p_template);
     END;
+```
 
 Result: 
 
@@ -62,7 +63,7 @@ Result:
 
 #### HTML Example
 set timing on;
-
+```plsql
     DECLARE
        p_template   CLOB;
        p_vars       teplsql.t_assoc_array;
@@ -108,6 +109,7 @@ set timing on;
 
        DBMS_OUTPUT.put_line (p_template);
     END;
+```
 
 Result: 
 
