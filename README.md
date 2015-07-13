@@ -62,7 +62,7 @@ Result:
 
 
 #### HTML Example
-set timing on;
+
 ```plsql
     DECLARE
        p_template   CLOB;
@@ -112,7 +112,7 @@ set timing on;
 ```
 
 Result: 
-
+```html
     <!DOCTYPE html>
     <html>
       <head>
@@ -130,7 +130,7 @@ Result:
     </html>
     PL/SQL procedure successfully completed.
     Elapsed: 00:00:00.02
-
+```
 
 ## Contributing
 
