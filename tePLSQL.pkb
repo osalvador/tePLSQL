@@ -1,4 +1,3 @@
-/* Formatted on 13/07/2015 13:42:05 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
@@ -107,8 +106,8 @@ AS
                          , 1);
          END IF;
 
-         --Get DynPLSQL in the template         
-         l_dyn_sql   := DBMS_LOB.SUBSTR (l_source, (l_end) - (l_start + 3), l_start + 3);
+         --Get DynPLSQL in the template
+         l_dyn_sql   := DBMS_LOB.SUBSTR (l_source, (l_end) - (l_start + 2), l_start + 2);
 
          IF l_dyn_sql IS NOT NULL
          THEN
@@ -136,7 +135,7 @@ AS
                   PRINT (CHR (10));
                   PRINT (v_error_desc);
                   PRINT (CHR (10));
-                  PRINT (DBMS_XMLGEN.CONVERT (l_dyn_sql, 0));
+                  PRINT (l_dyn_sql);
                   PRINT (CHR (10));
                   PRINT ('##Error BackTrace ');
                   PRINT (DBMS_UTILITY.format_error_backtrace ());
@@ -161,15 +160,19 @@ AS
          END IF;
 
          --Append the rest of template into result
-         DBMS_LOB.COPY (l_result
-                      , l_source
-                      , DBMS_LOB.getlength (l_source)
-                      , DBMS_LOB.getlength (l_result) + 1
-                      , l_end + 2);
+         IF (l_end + 2) < DBMS_LOB.getlength (l_source)
+         THEN
+            DBMS_LOB.COPY (l_result
+                         , l_source
+                         , DBMS_LOB.getlength (l_source)
+                         , DBMS_LOB.getlength (l_result) + 1
+                         , l_end + 2);
+         END IF;
       END IF;
 
       --Recursive render function,
       IF NVL (DBMS_LOB.INSTR (l_result, '<%'), 0) > 0
+         AND NVL (DBMS_LOB.INSTR (l_result, '%>', DBMS_LOB.INSTR (l_result, '<%')), 0) > 0
       THEN
          RETURN teplsql.render (l_result, p_vars);
       END IF;

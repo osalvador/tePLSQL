@@ -1,4 +1,3 @@
-/* Formatted on 13/07/2015 11:23:07 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PACKAGE teplsql
 AS
    --Define Associative Array

@@ -11,8 +11,7 @@ Today <% tePLSQL.print(to_char(sysdate, 'DD-MM-YYYY')); %> is a great day!
     FOR c1 IN (SELECT username FROM all_users WHERE username = '${username}')
     LOOP
         tePLSQL.print('Username: ' || c1.username || CHR(10));
-    END LOOP;
-   %> ]';
+    END LOOP;%>]';
 
    --Key-value variables. 
    p_vars ('FullName') := 'Oscar Salvador Magallanes';   

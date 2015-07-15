@@ -162,8 +162,7 @@ p_template := q'[<?xml version="1.0"?>
     <Cell ss:StyleID="s21"><Data ss:Type="String">columna 4</Data></Cell>
     <Cell ss:StyleID="s22"><Data ss:Type="String">columna 5</Data></Cell>    
    </Row>
-   <%
-       FOR i IN 1 .. 5
+   <% FOR i IN 1 .. 5
        LOOP
           teplsql.print ('<Row>');
           teplsql.print ('<Cell ss:Index="2" ss:StyleID="s26"><Data ss:Type="String">fila ' || i || ' </Data></Cell>');
@@ -173,8 +172,7 @@ p_template := q'[<?xml version="1.0"?>
           teplsql.print ('<Cell ss:StyleID="s18"><Data ss:Type="Number">' || to_char(i + 20) || '</Data></Cell>');
           teplsql.print ('<Cell ss:StyleID="s19"><Data ss:Type="Number">' || to_char(i + 30) || '</Data></Cell>');
           teplsql.print ('</Row>');
-       END LOOP;       
-   %> 
+       END LOOP; %> 
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
    <PageSetup>
