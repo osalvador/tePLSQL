@@ -2,6 +2,7 @@ CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
    g_parser   BOOLEAN := FALSE;
+   g_declare   CLOB;
 
    PROCEDURE bind_vars (p_source IN OUT NOCOPY CLOB, p_vars IN t_assoc_array)
    AS
@@ -90,6 +91,35 @@ AS
          g_parser    := TRUE;
       END IF;
 
+
+      --Get Declarations
+      IF g_declare IS NULL
+      THEN
+         l_start     := DBMS_LOB.INSTR (l_source, '<%declare');
+         l_end       := DBMS_LOB.INSTR (l_source, '%>');
+
+         IF (NVL (l_start, 0) > 0)
+         THEN
+            --Get Declaration in the template
+            g_declare   := DBMS_LOB.SUBSTR (l_source, (l_end) - (l_start + 9), l_start + 9);
+
+            DBMS_LOB.createtemporary (l_result, FALSE, DBMS_LOB.call);
+            
+            --Remove declaration from template
+            DBMS_LOB.COPY (l_result
+                         , l_source
+                         , DBMS_LOB.getlength(l_source)
+                         , 1
+                         , l_end + 2);
+
+            l_source    := l_result;
+            
+            DBMS_LOB.freetemporary (l_result);
+
+         END IF;
+
+      END IF;
+
       l_start     := DBMS_LOB.INSTR (l_source, '<%');
       l_end       := DBMS_LOB.INSTR (l_source, '%>');
 
@@ -111,8 +141,13 @@ AS
 
          IF l_dyn_sql IS NOT NULL
          THEN
-            -- BEGIN / END
-            l_dyn_sql   := 'BEGIN ' || l_dyn_sql || 'END;';
+            -- Get Dynamic PLSQL            
+            IF g_declare IS NOT NULL
+            THEN            
+                l_dyn_sql   := 'DECLARE '|| g_declare ||' BEGIN NULL; ' || l_dyn_sql || ' END;';
+            ELSE
+                l_dyn_sql   := 'BEGIN NULL; ' || l_dyn_sql || ' END;';
+            END IF;
 
             --Uncomment for DEBUG DynPLSQL
             --DBMS_OUTPUT.put_line ('l_dyn_sql = ' || l_dyn_sql);
@@ -182,6 +217,9 @@ AS
       --Null all variables not binded
       l_result    := REGEXP_REPLACE (l_result, '\$\{\S*\}', '');
 
+      --Reset Declare CLOB
+      g_declare := NULL;
+      
       RETURN l_result;
    EXCEPTION
       WHEN OTHERS
@@ -192,3 +230,4 @@ AS
          raise_application_error (-20001, SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
    END render;
 END teplsql;
+/
