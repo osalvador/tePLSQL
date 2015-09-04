@@ -1,7 +1,6 @@
 CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
-   g_parser   BOOLEAN := FALSE;
 
    PROCEDURE bind_vars (p_source IN OUT NOCOPY CLOB, p_vars IN t_assoc_array)
    AS
@@ -59,136 +58,122 @@ AS
       g_buffer    := g_buffer || TO_CHAR (p_data);
    END PRINT;
 
+   PROCEDURE p (p_data IN CLOB)
+   AS
+   BEGIN
+      g_buffer    := g_buffer || p_data;
+   END p;
+
+   PROCEDURE p (p_data IN VARCHAR2)
+   AS
+   BEGIN
+      g_buffer    := g_buffer || p_data;
+   END p;
+
+   PROCEDURE p (p_data IN NUMBER)
+   AS
+   BEGIN
+      g_buffer    := g_buffer || TO_CHAR (p_data);
+   END p;
+
    FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array)
       RETURN CLOB
    AS
-      l_start        NUMBER;
-      l_end          NUMBER;
-      l_result       CLOB;
-      l_source       CLOB;
-      l_dyn_sql      CLOB;
-      l_out          CLOB := EMPTY_CLOB;
-
-      ln_cursor      NUMBER;
-      ln_result      NUMBER;
-
-      --error control
-      v_ind          NUMBER := 1;
-      v_error_desc   VARCHAR2 (32000);
+      l_template   CLOB := p_template;
+      l_declare    CLOB;
+      l_tmp        CLOB;
+      l_chr_tmp    VARCHAR2 (32767);
+      i            PLS_INTEGER := 0;
    BEGIN
-      --init
-      l_source    := p_template;
-      l_result    := p_template;
-
       --Bind the variables
-      bind_vars (l_source, p_vars);
+      bind_vars (l_template, p_vars);
 
       --Parse <% %> tags, done once
-      IF NOT g_parser
-      THEN
-         parse (l_source);
-         g_parser    := TRUE;
-      END IF;
+      parse (l_template);
 
-      l_start     := DBMS_LOB.INSTR (l_source, '<%');
-      l_end       := DBMS_LOB.INSTR (l_source, '%>');
+      --Merge all declaration blocks into a single block
+      LOOP
+         i           := i + 1;
 
-      IF (NVL (l_start, 0) > 0)
-      THEN
-         DBMS_LOB.createtemporary (l_result, FALSE, DBMS_LOB.call);
-
-         IF l_start > 1
-         THEN
-            DBMS_LOB.COPY (l_result
-                         , l_source
-                         , l_start - 1
+         l_tmp       :=
+            REGEXP_SUBSTR (l_template
+                         , '<%!([^%>].*?)%>'
                          , 1
+                         , i
+                         , 'n'
                          , 1);
-         END IF;
+         l_declare   := l_declare || l_tmp;
+         EXIT WHEN LENGTH (l_tmp) = 0;
+      END LOOP;
 
-         --Get DynPLSQL in the template
-         l_dyn_sql   := DBMS_LOB.SUBSTR (l_source, (l_end) - (l_start + 2), l_start + 2);
+      --Delete declaration blocks from template
+      l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '<%!([^%>].*?)%>'
+                       , ''
+                       , 1
+                       , 0
+                       , 'n');
 
-         IF l_dyn_sql IS NOT NULL
+      --Expresison directive
+      l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '<%=([^%>].*?)%>'
+                       , ']'');tePLSQL.p(\1);tePLSQL.p(q''['
+                       , 1
+                       , 0
+                       , 'n');
+
+      --Code blocks directive
+      l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '<%([^%>].*?)%>'
+                       , ']''); \1 tePLSQL.p(q''['
+                       , 1
+                       , 0
+                       , 'n');
+
+      --Escaped chars
+      /*l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '\\(.)'
+                       , ']'');tePLSQL.p(q''[\1]'');tePLSQL.p(q''['
+                       , 1
+                       , 0
+                       , 'n');*/
+
+      --tePLSQL.print with null or one white space
+      --l_template  := REGEXP_REPLACE (l_template, 'tePLSQL.p\(''(\s){0,1}''\);', '');
+
+
+      l_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || l_template || ' ]''); END;';
+
+      --DBMS_OUTPUT.put_line (l_template);
+
+      BEGIN
+         EXECUTE IMMEDIATE l_template;
+      EXCEPTION
+         WHEN OTHERS
          THEN
-            -- BEGIN / END
-            l_dyn_sql   := 'BEGIN ' || l_dyn_sql || 'END;';
+            --Print error
+            PRINT ('#tePLSQL Inline Render Error');
+            PRINT (CHR (10));
+            PRINT (SQLERRM);
+            PRINT (CHR (10));
+            PRINT (l_template);
+            PRINT (CHR (10));
+            PRINT ('##Error BackTrace ');
+            PRINT (DBMS_UTILITY.format_error_backtrace ());
+      END;
 
-            --Uncomment for DEBUG DynPLSQL
-            --DBMS_OUTPUT.put_line ('l_dyn_sql = ' || l_dyn_sql);
+      l_template  := g_buffer;
+      g_buffer    := NULL;
 
-            --Exec DynSQL
-            ln_cursor   := DBMS_SQL.open_cursor;
-
-            BEGIN
-               DBMS_SQL.parse (ln_cursor, l_dyn_sql, DBMS_SQL.native);
-               ln_result   := DBMS_SQL.execute (ln_cursor);
-            EXCEPTION
-               WHEN OTHERS
-               THEN
-                  v_ind       := DBMS_SQL.last_error_position;
-                  v_error_desc := 'Before this sentence [' || SUBSTR (l_dyn_sql, v_ind, 60) || '...] (' || v_ind || ') ';
-                  --Print error
-                  PRINT ('#tePLSQL Inline Render Error');
-                  PRINT (CHR (10));
-                  PRINT (SQLERRM);
-                  PRINT (CHR (10));
-                  PRINT (v_error_desc);
-                  PRINT (CHR (10));
-                  PRINT (l_dyn_sql);
-                  PRINT (CHR (10));
-                  PRINT ('##Error BackTrace ');
-                  PRINT (DBMS_UTILITY.format_error_backtrace ());
-            END;
-
-            DBMS_SQL.close_cursor (ln_cursor);
-         END IF;
-
-         --Get and clean buffer
-         l_out       := g_buffer;
-         g_buffer    := NULL;
-
-         --Only if is not null
-         --Append buffer into result
-         IF LENGTH (l_out) > 0
-         THEN
-            DBMS_LOB.COPY (l_result
-                         , l_out
-                         , DBMS_LOB.getlength (l_out)
-                         , DBMS_LOB.getlength (l_result) + 1
-                         , 1);
-         END IF;
-
-         --Append the rest of template into result
-         IF (l_end + 2) < DBMS_LOB.getlength (l_source)
-         THEN
-            DBMS_LOB.COPY (l_result
-                         , l_source
-                         , DBMS_LOB.getlength (l_source)
-                         , DBMS_LOB.getlength (l_result) + 1
-                         , l_end + 2);
-         END IF;
-      END IF;
-
-      --Recursive render function,
-      IF NVL (DBMS_LOB.INSTR (l_result, '<%'), 0) > 0
-         AND NVL (DBMS_LOB.INSTR (l_result, '%>', DBMS_LOB.INSTR (l_result, '<%')), 0) > 0
-      THEN
-         RETURN teplsql.render (l_result, p_vars);
-      END IF;
-
-      --Bind all variables
-      bind_vars (l_result, p_vars);
-      --Null all variables not binded
-      l_result    := REGEXP_REPLACE (l_result, '\$\{\S*\}', '');
-
-      RETURN l_result;
+      RETURN l_template;
    EXCEPTION
       WHEN OTHERS
       THEN
-         v_ind       := DBMS_SQL.last_error_position;
-         v_error_desc :=
-            SUBSTR (SQLERRM, 1, 100) || ' before ' || SUBSTR (l_dyn_sql, v_ind, 60) || ' (' || v_ind || ') ';
          raise_application_error (-20001, SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
    END render;
 END teplsql;
+/
