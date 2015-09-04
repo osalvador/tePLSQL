@@ -13,8 +13,9 @@ The next table list tePLSQL elements that you can use in your templates.
 
 _**tePLSQPL Elements**_
 
+
 |Element | Name | Description
-|-- | -- | -- 
+|--------|------|------------- 
 |`${varName}` | External variable | The variables are defined in a key-value associative array that receives as parameter by the render
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
@@ -158,7 +159,8 @@ Result:
 
 
 #### Declaration and instructions
-```plsqpl
+
+```plsql
     DECLARE
        p_template   CLOB;
        p_vars       teplsql.t_assoc_array;
