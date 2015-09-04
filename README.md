@@ -13,12 +13,12 @@ The next table list tePLSQL elements that you can use in your templates.
 
 _**tePLSQPL Elements**_
 
-Element | Name | Description
--- | -- | -- 
-`${varName}` | External variable | The variables are defined in a key-value associative array that receives as parameter by the render
-`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
-`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
-`<%= ... %>` | Expression block | A single PL/SQL expression
+|Element | Name | Description
+|-- | -- | -- 
+|`${varName}` | External variable | The variables are defined in a key-value associative array that receives as parameter by the render
+|`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
+|`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
+|`<%= ... %>` | Expression block | A single PL/SQL expression
 
 
 The variables are defined in a key-value associative array that receives as parameter by the render. Within the templates reference to ahce variables via `${varName}`.
