@@ -1,4 +1,3 @@
-/* Formatted on 04/09/2015 11:43:19 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
@@ -120,7 +119,7 @@ AS
       l_template  :=
          REGEXP_REPLACE (l_template
                        , '<%=([^%>].*?)%>'
-                       , ''');tePLSQL.p(\1);tePLSQL.p('''
+                       , ']'');tePLSQL.p(\1);tePLSQL.p(q''['
                        , 1
                        , 0
                        , 'n');
@@ -129,18 +128,28 @@ AS
       l_template  :=
          REGEXP_REPLACE (l_template
                        , '<%([^%>].*?)%>'
-                       , '''); \1 tePLSQL.p('''
+                       , ']''); \1 tePLSQL.p(q''['
                        , 1
                        , 0
                        , 'n');
 
+      --Escaped chars
+      /*l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '\\(.)'
+                       , ']'');tePLSQL.p(q''[\1]'');tePLSQL.p(q''['
+                       , 1
+                       , 0
+                       , 'n');*/
+
       --tePLSQL.print with null or one white space
-      l_template  := REGEXP_REPLACE (l_template, 'tePLSQL.p\(''(\s){0,1}''\);', '');
+      --l_template  := REGEXP_REPLACE (l_template, 'tePLSQL.p\(''(\s){0,1}''\);', '');
 
 
-      l_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(''' || l_template || ' ''); END;';
+      l_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || l_template || ' ]''); END;';
 
       --DBMS_OUTPUT.put_line (l_template);
+
       BEGIN
          EXECUTE IMMEDIATE l_template;
       EXCEPTION
