@@ -23,5 +23,6 @@ AS
    --Render function.
    FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array)
       RETURN CLOB;
+      
 END teplsql;
 /
