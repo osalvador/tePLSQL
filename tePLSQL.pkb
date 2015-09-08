@@ -91,6 +91,15 @@ AS
       --Parse <% %> tags, done once
       parse (l_template);
 
+      --Delete new lines with !\n 
+      l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '(!\\n'||CHR(10)||')'
+                       , ''
+                       , 1
+                       , 0
+                       , 'n');
+
       --Merge all declaration blocks into a single block
       LOOP
          i           := i + 1;
@@ -134,18 +143,14 @@ AS
                        , 'n');
 
       --Escaped chars
-      /*l_template  :=
+      l_template  :=
          REGEXP_REPLACE (l_template
-                       , '\\(.)'
+                       , '\\\\(.)'
                        , ']'');tePLSQL.p(q''[\1]'');tePLSQL.p(q''['
                        , 1
                        , 0
-                       , 'n');*/
-
-      --tePLSQL.print with null or one white space
-      --l_template  := REGEXP_REPLACE (l_template, 'tePLSQL.p\(''(\s){0,1}''\);', '');
-
-
+                       , 'n');
+      
       l_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || l_template || ' ]''); END;';
 
       --DBMS_OUTPUT.put_line (l_template);
