@@ -20,7 +20,8 @@ _**tePLSQPL Elements**_
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
 |`<%= ... %>` | Expression block | A single PL/SQL expression
-
+|`\\char` | Escaped character | Escaping reserved words like `<% .. %>` and `q'[]'`
+| `!\n` | No new line | This element at the end of a line indicates that a new line is not included in the processed template
 
 The variables are defined in a key-value associative array that receives as parameter by the render. Within the templates reference to ahce variables via `${varName}`.
 
@@ -41,17 +42,28 @@ With Text template.
        p_vars       teplsql.t_assoc_array;
     BEGIN
        p_template  :=q'[
+       <%/* Using variables */%>!\n
        Hi ${FullName}!
+              
+       <%/* Using expressions */%>!\n
        Today <%= TO_CHAR(SYSDATE, 'DD-MM-YYYY') %> is a great day!
-       <%  --Using external variable in the query 
-       FOR c1 IN (SELECT username FROM all_users WHERE username = '${username}')
-       LOOP %>
-            Username: <%= c1.username %>
-       <% END LOOP; %> ]';
+       
+       <% --Using external variable in the query loop
+       FOR c1 IN (SELECT username FROM all_users WHERE username = UPPER('${username}'))
+       LOOP %>!\n
+       Username: <%= c1.username %>
+       <% END LOOP; %>!\n
+       
+       <%/* Escaping chars */%>!\n
+       This is the tePLSQL code block syntax <\\% ... %\\>
+       
+       <%/* Regards */%>!\n
+       Bye <%=UPPER('${username}')%>.
+       ]';
 
        --Key-value variables.
        p_vars ('FullName') := 'Oscar Salvador Magallanes';
-       p_vars ('username') := 'SYS';
+       p_vars ('username') := 'sys';
 
        p_template  := teplsql.render (p_template, p_vars);
 
@@ -61,12 +73,20 @@ With Text template.
 
 Result: 
 
+```
     Hi Oscar Salvador Magallanes!
-    Today 13-07-2015 is a great day!
+    
+    Today 08-09-2015 is a great day!
+    
     Username: SYS
+    
+    This is the tePLSQL code block syntax <% ... %>
+    
+    Bye SYS.
 
     PL/SQL procedure successfully completed.
     Elapsed: 00:00:00.02
+```
 
 
 #### HTML Example
