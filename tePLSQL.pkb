@@ -85,6 +85,9 @@ AS
       l_chr_tmp    VARCHAR2 (32767);
       i            PLS_INTEGER := 0;
    BEGIN
+      --Clear buffer
+      g_buffer    := NULL;
+      
       --Bind the variables
       bind_vars (l_template, p_vars);
 
@@ -161,14 +164,14 @@ AS
          WHEN OTHERS
          THEN
             --Print error
-            PRINT ('#tePLSQL Inline Render Error');
+            PRINT ('### tePLSQL Render Error ###');
             PRINT (CHR (10));
-            PRINT (SQLERRM);
+            PRINT (SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
+            PRINT (CHR (10));
+            PRINT ('### Processed template ###');
             PRINT (CHR (10));
             PRINT (l_template);
-            PRINT (CHR (10));
-            PRINT ('##Error BackTrace ');
-            PRINT (DBMS_UTILITY.format_error_backtrace ());
+           
       END;
 
       l_template  := g_buffer;
