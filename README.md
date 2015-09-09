@@ -251,6 +251,33 @@ Rceives the name of the object, usually a package, which contains an embedded te
 |p_schema | The object's schema name.
 | return CLOB | The processed template.
 
+
+### PRINT
+
+Prints received data into the buffer
+
+#### Syntax
+
+```plsql
+   PROCEDURE PRINT (p_data IN CLOB);
+
+   PROCEDURE p (p_data IN CLOB);
+
+   PROCEDURE PRINT (p_data IN VARCHAR2);
+
+   PROCEDURE p (p_data IN VARCHAR2);
+
+   PROCEDURE PRINT (p_data IN NUMBER);
+
+   PROCEDURE p (p_data IN NUMBER);
+```
+
+#### Parameters
+
+|Parameter | Description
+|----------|------------
+|p_data | The data to print into buffer
+
 ## Contributing
 
 If you have ideas, get in touch directly.
