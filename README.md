@@ -20,7 +20,8 @@ _**tePLSQPL Elements**_
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
 |`<%= ... %>` | Expression block | A single PL/SQL expression
-|`\\char` | Escaped character | Escaping reserved words like `<% .. %>` and `q'[]'`
+|`\\` | Escaped character | Escaping reserved words like `<% .. %>` and `q'[]'`
+| `\\n` | New line | Insert new line in the processed template
 | `!\n` | No new line | This element at the end of a line indicates that a new line is not included in the processed template
 
 The variables are defined in a key-value associative array that receives as parameter by the render. Within the templates reference to ahce variables via `${varName}`.
@@ -42,22 +43,22 @@ With Text template.
        p_vars       teplsql.t_assoc_array;
     BEGIN
        p_template  :=q'[
-       <%/* Using variables */%>!\n
+       <%/* Using variables */%>
        Hi ${FullName}!
               
-       <%/* Using expressions */%>!\n
+       <%/* Using expressions */%>
        Today <%= TO_CHAR(SYSDATE, 'DD-MM-YYYY') %> is a great day!
        
        <% --Using external variable in the query loop
        FOR c1 IN (SELECT username FROM all_users WHERE username = UPPER('${username}'))
-       LOOP %>!\n
-       Username: <%= c1.username %>
-       <% END LOOP; %>!\n
+       LOOP %>
+       Username: <%= c1.username %>.
+       <% END LOOP; %>
        
-       <%/* Escaping chars */%>!\n
+       <%/* Escaping chars */%>
        This is the tePLSQL code block syntax <\\% ... %\\>
        
-       <%/* Regards */%>!\n
+       <%/* Regards */%>
        Bye <%=UPPER('${username}')%>.
        ]';
 
@@ -103,24 +104,24 @@ Result:
         <title>${title}</title>
       </head>
       <body>
-      <h1> Print Sequence numbers </h1>
-      <br>
-      <%for i in ${initValue} .. ${lastValue}
+        <h1> Print Sequence numbers </h1>
+        <br>
+    <%for i in ${initValue} .. ${lastValue}
         loop %>
-            <%= i %> <br>        
-        <% end loop;%>
-      <h1> Print the Odd numbers of sequence </h1>
-      <br>    
-       <% /*You can insert PLSQL comments as always*/ 
+        <%= i %> <br>
+    <% end loop;%>
+        <h1> Print the Odd numbers of sequence </h1>
+        <br>    
+        <% /*You can insert PLSQL comments as always*/ 
         for i in ${initValue} .. ${lastValue}
-        loop
+        loop 
             if mod(i,2) <> 0 
             then %>
-            <%= i %> <br>
-         <% end if;        
+                <%= i %><br>
+        <% end if; 
         end loop; %>
       </body>
-    </html>]';
+    </html>]]';
 
        --Key-value variables.
        p_vars ('title') := 'Number sequence';
@@ -141,38 +142,36 @@ Result:
         <title>Number sequence</title>
       </head>
       <body>
-      <h1> Print Sequence numbers </h1>
-      <br>
-      5 <br>        
-        6 <br>        
-        7 <br>        
-        8 <br>        
-        9 <br>        
-        10 <br>        
-        11 <br>        
-        12 <br>        
-        13 <br>        
-        14 <br>        
-        15 <br>        
-        16 <br>        
-        17 <br>        
-        18 <br>        
-        19 <br>        
-        20 <br>        
-        
-      <h1> Print the Odd numbers of sequence </h1>
-      <br>    
-       5 <br>
-         7 <br>
-         9 <br>
-         11 <br>
-         13 <br>
-         15 <br>
-         17 <br>
-         19 <br>
-         
-      </body>
-    </html>  
+        <h1> Print Sequence numbers </h1>
+        <br>
+            5 <br>
+            6 <br>
+            7 <br>
+            8 <br>
+            9 <br>
+            10 <br>
+            11 <br>
+            12 <br>
+            13 <br>
+            14 <br>
+            15 <br>
+            16 <br>
+            17 <br>
+            18 <br>
+            19 <br>
+            20 <br>
+            <h1> Print the Odd numbers of sequence </h1>
+        <br>    
+                        5<br>
+                        7<br>
+                        9<br>
+                        11<br>
+                        13<br>
+                        15<br>
+                        17<br>
+                        19<br>
+              </body>
+    </html>
     PL/SQL procedure successfully completed.
     Elapsed: 00:00:00.02
 ```
@@ -189,8 +188,7 @@ Result:
        q'[<%! lang_name VARCHAR2(10) := 'PL/SQL';
            l_random_number pls_integer := ROUND(DBMS_RANDOM.VALUE (1, 9));
           %> 
-            The 'sequence' is used in scripting language: <%=lang_name %>
-            
+            The 'sequence' is used in scripting language: <%=lang_name %>.            
             The result of the operation ${someInValue} * <%= l_random_number %> is <%= ${someInValue} * l_random_number %>
         ]';
 
@@ -205,9 +203,53 @@ Result:
 
 Result:
 
-        The 'sequence' is used in scripting language: PL/SQL
-        
+        The 'sequence' is used in scripting language: PL/SQL.
         The result of the operation 5 * 7 is 35
+
+## tePLSQL API reference
+
+### RENDER
+
+Renders the template received as parameter. 
+
+#### Syntax
+
+```plsql
+   FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array)
+      RETURN CLOB;
+```
+
+#### Parameters
+
+|Parameter | Description
+|----------|------------
+|p_template | The template's body.
+|p_vars | The template's arguments.
+| return CLOB | The processed template.
+
+### PROCESS
+
+Rceives the name of the object, usually a package, which contains an embedded template. The template is extracted and is rendered with `render` function 
+
+#### Syntax
+
+```plsql
+   FUNCTION process (p_name          IN VARCHAR2
+                   , p_vars          IN t_assoc_array
+                   , p_object_type   IN VARCHAR2 DEFAULT 'PACKAGE'
+                   , p_schema        IN VARCHAR2 DEFAULT NULL )
+      RETURN CLOB;
+```
+
+#### Parameters
+
+|Parameter | Description
+|----------|------------
+|p_name | The name of the object (usually the name of the package)
+|p_vars | The template's arguments.
+|p_object_type | The type of the object (PACKAGE, PROCEDURE, FUNCTION...)
+|p_schema | The object's schema name.
+| return CLOB | The processed template.
 
 ## Contributing
 
