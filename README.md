@@ -309,8 +309,6 @@ Process the template:
     BEGIN
        result      := teplsql.process (p_name => 'test_tmpl', p_template_name => 'adding');
        DBMS_OUTPUT.put_line (result);
-       result      := teplsql.process (p_name => 'test_tmpl', p_template_name => 'subtracting');
-       DBMS_OUTPUT.put_line (result);
     END;
 ```
 
