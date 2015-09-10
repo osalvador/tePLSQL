@@ -281,41 +281,37 @@ Defining the template name
     $if false $then
     <%@ template 
         name=adding,
-        version=0.1
-    %>
+        version=0.1 %>
     <%! x pls_integer := 1 + 1; %>
     Processing template ${template_name} with version ${template_version}
     The variable x has the value: <%= x %>
     $end
 
     $if false $then
-    <%@ template 
-        name=subtracting,
-        version=0.1
-    %>
+    <%@ template name=subtracting, version=0.1, revision=3 %>
     <%! y pls_integer := 1 - 1; %>
-    Processing template ${template_name} with version ${template_version}
+    Processing template ${template_name} with version ${template_version} and revision ${template_revision}
     The variable y has the value: <%= y %>
     $end
 
     END test_tmpl;
 ```
 
-Process the template:
+Process the "subtracting" template:
 
 ```plsql
     DECLARE
        result   CLOB;
     BEGIN
-       result      := teplsql.process (p_object_name => 'test_tmpl', p_template_name => 'adding');
+       result      := teplsql.process (p_object_name => 'test_tmpl', p_template_name => 'subtracting');
        DBMS_OUTPUT.put_line (result);
     END;
 ```
 
 Result:
 
-    Processing template adding with version 0.1
-    The variable x has the value: 2
+    Processing template subtracting with version 0.1 and revision 3
+    The variable y has the value: 0
 
 
 <a name="apiReference"></a>
