@@ -307,7 +307,7 @@ Process the template:
     DECLARE
        result   CLOB;
     BEGIN
-       result      := teplsql.process (p_name => 'test_tmpl', p_template_name => 'adding');
+       result      := teplsql.process (p_object_name => 'test_tmpl', p_template_name => 'adding');
        DBMS_OUTPUT.put_line (result);
     END;
 ```
@@ -347,7 +347,7 @@ Rceives the name of the object, usually a package, which contains an embedded te
 #### Syntax
 
 ```plsql
-   FUNCTION process (p_name          IN VARCHAR2
+   FUNCTION process (p_object_name   IN VARCHAR2
                    , p_vars          IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name IN VARCHAR2 DEFAULT NULL
                    , p_object_type   IN VARCHAR2 DEFAULT 'PACKAGE'
@@ -359,7 +359,7 @@ Rceives the name of the object, usually a package, which contains an embedded te
 
 |Parameter | Description
 |----------|------------
-|p_name | The name of the object (usually the name of the package).
+|p_object_name | The name of the object (usually the name of the package).
 |p_vars | The template's arguments.
 |p_template_name | The name of the template.
 |p_object_type | The type of the object (PACKAGE, PROCEDURE, FUNCTION...).

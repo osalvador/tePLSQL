@@ -1,4 +1,3 @@
-/* Formatted on 10/09/2015 12:51:28 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PACKAGE teplsql
 AS
    --Define Associative Array
@@ -41,13 +40,13 @@ AS
    * which contains an embedded template.
    * The template is extracted and is rendered with `render` function
    *
-   * @param  p_name             the name of the object (usually the name of the package)
+   * @param  p_object_name      the name of the object (usually the name of the package)
    * @param  p_vars             the template's arguments.
    * @param  p_template_name    the name of the template
    * @param  p_object_type      the type of the object (PACKAGE, PROCEDURE, FUNCTION...)
    * @return                    the processed template.
    */
-   FUNCTION process (p_name            IN VARCHAR2
+   FUNCTION process (p_object_name     IN VARCHAR2
                    , p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'

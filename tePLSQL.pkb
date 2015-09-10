@@ -333,8 +333,8 @@ AS
    END render;
 
 
-   FUNCTION process (p_name            IN VARCHAR2
-                   , p_vars            IN t_assoc_array
+   FUNCTION process (p_object_name     IN VARCHAR2
+                   , p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
@@ -348,7 +348,7 @@ AS
       l_found        PLS_INTEGER := 0;
    BEGIN
       --Get package source DDL
-      l_object_ddl := DBMS_METADATA.get_ddl (UPPER (p_object_type), UPPER (p_name), UPPER (p_schema));
+      l_object_ddl := DBMS_METADATA.get_ddl (UPPER (p_object_type), UPPER (p_object_name), UPPER (p_schema));
 
       --If p_template_name is null get all templates from the object
       --else get only this template.
@@ -412,7 +412,7 @@ AS
          IF p_template_name IS NOT NULL
          THEN
             raise_application_error (-20002
-                                   , 'Template ' || p_template_name || ' not found in object ' || UPPER (p_name));
+                                   , 'Template ' || p_template_name || ' not found in object ' || UPPER (p_object_name));
          ELSE
             raise_application_error (-20002
                                    , 'The object ' || l_object_ddl || ' have no template inside $if false $then');
