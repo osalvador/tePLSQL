@@ -9,13 +9,23 @@ Now tePLSQL has the same syntax as the old fashion [Oracle PSP](http://docs.orac
 
 Templates are processed and a single block of PLSQPL code being executed dynamically, as does the Oracle PSP loader.  
 
+- [tePLSQL Elements](#teElements)<br/>
+- [Getting started](#getStart)<br/>
+    + [Install](#install)<br/>
+    + [Usage](#usage)<br/>
+    + [Templates embebed in objects](#tmplInObjects)<br/>
+- [tePLSQL API reference](#apiReference)</br>
+- [Contributing](#contributing)<br/>
+- [License](#license)
+
+<a name="teElements"></a>
+## tePLSQL Elements
+
 The next table list tePLSQL elements that you can use in your templates. 
-
-_**tePLSQPL Elements**_
-
 
 |Element | Name | Description
 |--------|------|------------- 
+|`<%@ template ... %>` | Template Directive | Characteristics of the template
 |`${varName}` | External variable | The variables are defined in a key-value associative array that receives as parameter by the render
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
@@ -28,11 +38,14 @@ The variables are defined in a key-value associative array that receives as para
 
 tePSLQL was created when I noticed that there was no separation between business logic and views in my developments. Furthermore it is very useful in code generators template-based, such as Table APIs.
 
+<a name="getStart"></a>
 ## Getting started
 
+<a name="install"></a>
 ### Install
 Download and compile TEPLSQL.pks and TEPLSQL.pkb. No schema grants are necesary.
 
+<a name="usage"></a>
 ### Usage
 
 #### Basic Example
@@ -206,6 +219,110 @@ Result:
         The 'sequence' is used in scripting language: PL/SQL.
         The result of the operation 5 * 7 is 35
 
+<a name="tmplInObjects"></a>
+#### Templates embebed in objects
+
+tePLSQL templates can be stored inside PL/SQL program unit spec or bodies.
+
+In order to place a template into a program unit you have to create a non-compiled section in the latter with the aid of PL/SQL conditional compilation directives:
+
+```plsql
+    CREATE OR REPLACE PACKAGE test_tmpl
+    AS
+    $if false $then
+    <%! x pls_integer := 1 + 1; %>
+    The variable x has the value: <%= x %>
+    $end
+    END test_tmpl;
+```
+
+Process the template:
+
+```plsql
+    DECLARE
+       result   CLOB;
+    BEGIN
+       result      := teplsql.process ('test_tmpl');
+       DBMS_OUTPUT.put_line (result);
+    END;
+```
+
+Result:
+
+    The variable x has the value: 2
+
+##### Named Templates
+
+In order to store several templates in a single object correctly you must
+specify template characteristics. 
+
+Use the `<%@ template ... %>` directive to specify characteristics of the template:
+
+- What is the name of the template
+- What is the version of the template
+- Any other user-defined feature
+
+The characteristics are a pair of key-value separated by commas
+
+###### Syntax
+
+`<%@ template key=value, key2=value2 %>`
+
+The syntax is case-sensitive but space-insensitive. Values with blanks are not allowed.
+
+###### Example
+
+Defining the template name
+
+```plsql
+    CREATE OR REPLACE PACKAGE test_tmpl
+    AS
+
+    $if false $then
+    <%@ template 
+        name=adding,
+        version=0.1
+    %>
+    <%! x pls_integer := 1 + 1; %>
+    Processing template ${template_name} with version ${template_version}
+    The variable x has the value: <%= x %>
+    $end
+
+    $if false $then
+    <%@ template 
+        name=subtracting,
+        version=0.1
+    %>
+    <%! y pls_integer := 1 - 1; %>
+    Processing template ${template_name} with version ${template_version}
+    The variable y has the value: <%= y %>
+    $end
+
+    END test_tmpl;
+```
+
+Process the template:
+
+```plsql
+    DECLARE
+       result   CLOB;
+    BEGIN
+       result      := teplsql.process (p_name => 'test_tmpl', p_template_name => 'adding');
+       DBMS_OUTPUT.put_line (result);
+       result      := teplsql.process (p_name => 'test_tmpl', p_template_name => 'subtracting');
+       DBMS_OUTPUT.put_line (result);
+    END;
+```
+
+Result:
+
+    Processing adding with version 0.1
+    The variable x has the value: 2 
+
+    Processing subtracting with version 0.1
+    The variable y has the value: 0 
+
+<a name="apiReference"></a>
 ## tePLSQL API reference
 
 ### RENDER
@@ -215,7 +332,7 @@ Renders the template received as parameter.
 #### Syntax
 
 ```plsql
-   FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array)
+   FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array )
       RETURN CLOB;
 ```
 
@@ -235,7 +352,8 @@ Rceives the name of the object, usually a package, which contains an embedded te
 
 ```plsql
    FUNCTION process (p_name          IN VARCHAR2
-                   , p_vars          IN t_assoc_array
+                   , p_vars          IN t_assoc_array DEFAULT null_assoc_array
+                   , p_template_name IN VARCHAR2 DEFAULT NULL
                    , p_object_type   IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema        IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;
@@ -245,12 +363,12 @@ Rceives the name of the object, usually a package, which contains an embedded te
 
 |Parameter | Description
 |----------|------------
-|p_name | The name of the object (usually the name of the package)
+|p_name | The name of the object (usually the name of the package).
 |p_vars | The template's arguments.
-|p_object_type | The type of the object (PACKAGE, PROCEDURE, FUNCTION...)
+|p_template_name | The name of the template.
+|p_object_type | The type of the object (PACKAGE, PROCEDURE, FUNCTION...).
 |p_schema | The object's schema name.
 | return CLOB | The processed template.
-
 
 ### PRINT
 
@@ -278,6 +396,7 @@ Prints received data into the buffer
 |----------|------------
 |p_data | The data to print into buffer
 
+<a name="contributing"></a>
 ## Contributing
 
 If you have ideas, get in touch directly.
@@ -290,6 +409,7 @@ This can be automatically added to pull requests by committing with:
 
     git commit --signoff
 
+<a name="license"></a>
 ## License
 Copyright 2015 Oscar Salvador Magallanes 
 
