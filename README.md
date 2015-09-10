@@ -314,8 +314,8 @@ Process the template:
 
 Result:
 
-    Processing adding with version 0.1
-    The variable x has the value: 2 
+    Processing template adding with version 0.1
+    The variable x has the value: 2
 
 
 <a name="apiReference"></a>
