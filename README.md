@@ -12,6 +12,7 @@ Templates are processed and a single block of PLSQPL code being executed dynamic
 - [tePLSQL Elements](#teElements)<br/>
 - [Getting started](#getStart)<br/>
     + [Install](#install)<br/>
+    + [Compatibility](#compatibility)<br/>
     + [Usage](#usage)<br/>
     + [Templates embebed in objects](#tmplInObjects)<br/>
 - [tePLSQL API reference](#apiReference)</br>
@@ -44,6 +45,11 @@ tePSLQL was created when I noticed that there was no separation between business
 <a name="install"></a>
 ### Install
 Download and compile TEPLSQL.pks and TEPLSQL.pkb. No schema grants are necesary.
+
+<a name="compatibility"></a>
+###Compatibility
+
+tePLSQL use regular expressions to process templates. Regular expressions were added in Oracle version 10 therefore teplsql works in Oracle Database 10g, 11g and 12c (all editions including XE).
 
 <a name="usage"></a>
 ### Usage
