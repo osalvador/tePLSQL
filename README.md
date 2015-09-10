@@ -317,8 +317,6 @@ Result:
     Processing adding with version 0.1
     The variable x has the value: 2 
 
-    Processing subtracting with version 0.1
-    The variable y has the value: 0 
 
 <a name="apiReference"></a>
 ## tePLSQL API reference
