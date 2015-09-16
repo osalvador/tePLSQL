@@ -31,7 +31,7 @@ The next table list tePLSQL elements that you can use in your templates.
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
 |`<%= ... %>` | Expression block | A single PL/SQL expression
-|`\\` | Escaped character | Escaping reserved words like `<% .. %>` and `q'[]'`
+|`\\` | Escaped character | Escaping reserved words like `<\\% .. %\\>` and `q\\'[]\\'`
 | `\\n` | New line | Insert new line in the processed template
 | `!\n` | No new line | This element at the end of a line indicates that a new line is not included in the processed template
 
