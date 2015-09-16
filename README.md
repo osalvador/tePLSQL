@@ -57,38 +57,36 @@ tePLSQL use regular expressions to process templates. Regular expressions were a
 #### Basic Example
 With Text template.
 ```plsql
-    DECLARE
-       p_template   VARCHAR2 (32000);
-       p_vars       teplsql.t_assoc_array;
-    BEGIN
-       p_template  :=q'[
-       <%/* Using variables */%>
+DECLARE
+   p_template   VARCHAR2 (32000);
+   p_vars       teplsql.t_assoc_array;
+BEGIN
+   p_template  :=
+      q'[<%/* Using variables */%>
        Hi ${FullName}!
-              
+
        <%/* Using expressions */%>
        Today <%= TO_CHAR(SYSDATE, 'DD-MM-YYYY') %> is a great day!
-       
+              
        <% --Using external variable in the query loop
-       FOR c1 IN (SELECT username FROM all_users WHERE username = UPPER('${username}'))
-       LOOP %>
-       Username: <%= c1.username %>.
-       <% END LOOP; %>
+          for c1 in (select username, user_id from all_users where username = upper('${username}')) loop %>          
+       Username: <%= c1.username %>, ID:<%= c1.user_id %>.
+       <% end loop; %>       
        
-       <%/* Escaping chars */%>
+       <%/* Escaping chars */%>       
        This is the tePLSQL code block syntax <\\% ... %\\>
-       
+              
        <%/* Regards */%>
-       Bye <%=UPPER('${username}')%>.
-       ]';
+       Bye <%=UPPER('${username}')%>.]';
 
-       --Key-value variables.
-       p_vars ('FullName') := 'Oscar Salvador Magallanes';
-       p_vars ('username') := 'sys';
+   --Key-value variables.
+   p_vars ('FullName') := 'Oscar Salvador Magallanes';
+   p_vars ('username') := 'test';
 
-       p_template  := teplsql.render (p_template, p_vars);
+   p_template  := teplsql.render (p_template, p_vars);
 
-       DBMS_OUTPUT.put_line (p_template);
-    END;
+   DBMS_OUTPUT.put_line (p_template);
+END;
 ```
 
 Result: 
@@ -112,12 +110,12 @@ Result:
 #### HTML Example
 
 ```plsql
-    DECLARE
-       p_template   CLOB;
-       p_vars       teplsql.t_assoc_array;
-    BEGIN
-       p_template  :=
-          q'[<!DOCTYPE html>
+DECLARE
+   p_template   CLOB;
+   p_vars       teplsql.t_assoc_array;
+BEGIN
+   p_template  :=
+      q'[<!DOCTYPE html>
     <html>
       <head>
         <title>${title}</title>
@@ -125,10 +123,9 @@ Result:
       <body>
         <h1> Print Sequence numbers </h1>
         <br>
-    <%for i in ${initValue} .. ${lastValue}
-        loop %>
-        <%= i %> <br>
-    <% end loop;%>
+        <%for i in ${initValue} .. ${lastValue} loop %>
+        <%= i %><br>
+        <% end loop;%>
         <h1> Print the Odd numbers of sequence </h1>
         <br>    
         <% /*You can insert PLSQL comments as always*/ 
@@ -136,26 +133,26 @@ Result:
         loop 
             if mod(i,2) <> 0 
             then %>
-                <%= i %><br>
+        <%= i %><br>
         <% end if; 
         end loop; %>
       </body>
-    </html>]]';
+    </html>]';
 
-       --Key-value variables.
-       p_vars ('title') := 'Number sequence';
-       p_vars ('initValue') := 5;
-       p_vars ('lastValue') := 20;
+   --Key-value variables.
+   p_vars ('title') := 'Number sequence';
+   p_vars ('initValue') := 5;
+   p_vars ('lastValue') := 20;
 
-       p_template  := teplsql.render (p_template, p_vars);
+   p_template  := teplsql.render (p_template, p_vars);
 
-       DBMS_OUTPUT.put_line (p_template);
-    END;
+   DBMS_OUTPUT.put_line (p_template);
+END;
 ```
 
 Result: 
 ```html
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html>
       <head>
         <title>Number sequence</title>
@@ -163,33 +160,33 @@ Result:
       <body>
         <h1> Print Sequence numbers </h1>
         <br>
-            5 <br>
-            6 <br>
-            7 <br>
-            8 <br>
-            9 <br>
-            10 <br>
-            11 <br>
-            12 <br>
-            13 <br>
-            14 <br>
-            15 <br>
-            16 <br>
-            17 <br>
-            18 <br>
-            19 <br>
-            20 <br>
-            <h1> Print the Odd numbers of sequence </h1>
+        5<br>
+        6<br>
+        7<br>
+        8<br>
+        9<br>
+        10<br>
+        11<br>
+        12<br>
+        13<br>
+        14<br>
+        15<br>
+        16<br>
+        17<br>
+        18<br>
+        19<br>
+        20<br>
+        <h1> Print the Odd numbers of sequence </h1>
         <br>    
-                        5<br>
-                        7<br>
-                        9<br>
-                        11<br>
-                        13<br>
-                        15<br>
-                        17<br>
-                        19<br>
-              </body>
+        5<br>
+        7<br>
+        9<br>
+        11<br>
+        13<br>
+        15<br>
+        17<br>
+        19<br>
+      </body>
     </html>
     PL/SQL procedure successfully completed.
     Elapsed: 00:00:00.02

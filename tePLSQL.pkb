@@ -161,6 +161,9 @@ AS
 
       --Bind the variables into template
       bind_vars (l_template, l_vars);
+      
+      --Null all variables not binded
+      l_template    := REGEXP_REPLACE (l_template, '\$\{\S*\}', '');
 
       --Delete all template directives
       l_template  :=
@@ -175,29 +178,39 @@ AS
       l_template  :=
          REGEXP_REPLACE (l_template
                        , '(\\\\n)'
-                       , CHR (10) || ']'');tePLSQL.p(q''['
+                       , CHR (10) --|| ']'');tePLSQL.p(q''['
                        , 1
                        , 0
                        , 'n');
+
 
       --Delete the line breaks for lines ending in %>[blanks]CHR(10)
       l_template  :=
          REGEXP_REPLACE (l_template
-                       , '(%>\s*?' || CHR (10) || ')'
+                       , '(%>[[:blank:]]*?' || CHR (10) || ')'
                        , '%>'
                        , 1
                        , 0
-                       , 'n');
+                       , 'm');
 
       --Delete new lines with !\n
       l_template  :=
          REGEXP_REPLACE (l_template
-                       , '(!\\n' || CHR (10) || ')'
+                       , '([[:blank:]]*\!\\n[[:blank:]]*' || CHR (10) || '?[[:blank:]]*)'
                        , ''
                        , 1
                        , 0
-                       , 'n');
+                       , 'm');
 
+      -- Delete all blanks before <% in the beginning of each line
+      l_template  :=
+         REGEXP_REPLACE (l_template
+                       , '(^[[:blank:]]*<%)'
+                       , '<%'
+                       , 1
+                       , 0
+                       , 'm');
+              
       --Merge all declaration blocks into a single block
       l_tmp       := NULL;
 
@@ -260,6 +273,7 @@ AS
                        , 0
                        , 'n');
 
+
       l_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || l_template || ' ]''); END;';
 
       --DBMS_OUTPUT.put_line (l_template);
@@ -277,8 +291,8 @@ AS
              FOR i IN 1 .. v_upperbound
              LOOP
                 v_sql (i)   := DBMS_LOB.SUBSTR (l_template, -- clob statement
-                                                           32767, -- amount
-                                                                  ( (i - 1) * 32767) + 1);
+                                                  32767, -- amount
+                                                  ( (i - 1) * 32767) + 1);
              END LOOP;
 
              v_cur       := DBMS_SQL.open_cursor;
