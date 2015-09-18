@@ -1,0 +1,588 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>tePLSQL by osalvador</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">tePLSQL</h1>
+        <p class="header">Template engine 100% PLSQL</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/osalvador/tePLSQL/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/osalvador/tePLSQL/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/osalvador/tePLSQL">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/osalvador">osalvador</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a id="teplsql" class="anchor" href="#teplsql" aria-hidden="true"><span class="octicon octicon-link"></span></a>tePLSQL</h1>
+
+<p>Template Engine for PLSQL.</p>
+
+<p>tePLSQL is a template engine written completly in PLSQL, generate text output (HTML web pages, e-mails, configuration files, source code, etc.) based on templates. Templates are written with embebed Dynamic PLSQL . </p>
+
+<p>With tePLSQL you should prepare the data to display in your PLSQL packages and do business calculations, and then the template displays that already prepared data. In the template you are focusing on how to present the data, and outside the template you are focusing on what data to present.</p>
+
+<p>Now tePLSQL has the same syntax as the old fashion <a href="http://docs.oracle.com/cd/E11882_01/appdev.112/e41502/adfns_psp.htm#ADFNS016">Oracle PSP</a> so you do not have to learn any new template language and your PSP will be supported by tePLSQL making some small modifications.</p>
+
+<p>Templates are processed and a single block of PLSQPL code being executed dynamically, as does the Oracle PSP loader.  </p>
+
+<ul>
+<li>
+<a href="#teElements">tePLSQL Elements</a><br>
+</li>
+<li>
+<a href="#getStart">Getting started</a><br>
+
+<ul>
+<li>
+<a href="#install">Install</a><br>
+</li>
+<li>
+<a href="#compatibility">Compatibility</a><br>
+</li>
+<li>
+<a href="#usage">Usage</a><br>
+</li>
+<li>
+<a href="#tmplInObjects">Templates embebed in objects</a><br>
+</li>
+</ul>
+</li>
+<li><a href="#apiReference">tePLSQL API reference</a></li>
+<li>
+<a href="#contributing">Contributing</a><br>
+</li>
+<li><a href="#license">License</a></li>
+</ul>
+
+<p><a name="teElements"></a></p>
+
+<h2>
+<a id="teplsql-elements" class="anchor" href="#teplsql-elements" aria-hidden="true"><span class="octicon octicon-link"></span></a>tePLSQL Elements</h2>
+
+<p>The next table list tePLSQL elements that you can use in your templates. </p>
+
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;%@ template ... %&gt;</code></td>
+<td>Template Directive</td>
+<td>Characteristics of the template</td>
+</tr>
+<tr>
+<td><code>${varName}</code></td>
+<td>External variable</td>
+<td>The variables are defined in a key-value associative array that receives as parameter by the render</td>
+</tr>
+<tr>
+<td><code>&lt;%! ... %&gt;</code></td>
+<td>Declaration block</td>
+<td>The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.</td>
+</tr>
+<tr>
+<td><code>&lt;% ... %&gt;</code></td>
+<td>Code block</td>
+<td>A set of PL/SQL statements to be executed when the template is run.</td>
+</tr>
+<tr>
+<td><code>&lt;%= ... %&gt;</code></td>
+<td>Expression block</td>
+<td>A single PL/SQL expression</td>
+</tr>
+<tr>
+<td><code>\\</code></td>
+<td>Escaped character</td>
+<td>Escaping reserved words like <code>&lt;\\% .. %\\&gt;</code> and <code>q\\'[]\\'</code>
+</td>
+</tr>
+<tr>
+<td><code>\\n</code></td>
+<td>New line</td>
+<td>Insert new line in the processed template</td>
+</tr>
+<tr>
+<td><code>!\n</code></td>
+<td>No new line</td>
+<td>This element at the end of a line indicates that a new line is not included in the processed template</td>
+</tr>
+</tbody>
+</table>
+
+<p>The variables are defined in a key-value associative array that receives as parameter by the render. Within the templates reference to ahce variables via <code>${varName}</code>.</p>
+
+<p>tePSLQL was created when I noticed that there was no separation between business logic and views in my developments. Furthermore it is very useful in code generators template-based, such as Table APIs.</p>
+
+<p><a name="getStart"></a></p>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting started</h2>
+
+<p><a name="install"></a></p>
+
+<h3>
+<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h3>
+
+<p>Download and compile TEPLSQL.pks and TEPLSQL.pkb. No schema grants are necesary.</p>
+
+<p><a name="compatibility"></a></p>
+
+<h3>
+<a id="compatibility" class="anchor" href="#compatibility" aria-hidden="true"><span class="octicon octicon-link"></span></a>Compatibility</h3>
+
+<p>tePLSQL use regular expressions to process templates. Regular expressions were added in Oracle version 10 therefore teplsql works in Oracle Database 10g, 11g and 12c (all editions including XE).</p>
+
+<p><a name="usage"></a></p>
+
+<h3>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h3>
+
+<h4>
+<a id="basic-example" class="anchor" href="#basic-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Basic Example</h4>
+
+<p>With Text template.</p>
+
+<div class="highlight highlight-source-plsql-oracle"><pre><span class="pl-k">DECLARE</span>
+   p_template   <span class="pl-k">VARCHAR2</span> (<span class="pl-c1">32000</span>);
+   p_vars       teplsql.t_assoc_array;
+<span class="pl-k">BEGIN</span>
+   p_template  <span class="pl-k">:=</span>
+      <span class="pl-s">q'[&lt;%/* Using variables */%&gt;</span>
+<span class="pl-s">       Hi ${FullName}!</span>
+<span class="pl-s"></span>
+<span class="pl-s">       &lt;%/* Using expressions */%&gt;</span>
+<span class="pl-s">       Today &lt;%= TO_CHAR(SYSDATE, 'DD-MM-YYYY') %&gt; is a great day!</span>
+<span class="pl-s"></span>
+<span class="pl-s">       &lt;% --Using external variable in the query loop</span>
+<span class="pl-s">          for c1 in (select username, user_id from all_users where username = upper('${username}')) loop %&gt;          </span>
+<span class="pl-s">       Username: &lt;%= c1.username %&gt;, ID:&lt;%= c1.user_id %&gt;.</span>
+<span class="pl-s">       &lt;% end loop; %&gt;       </span>
+<span class="pl-s"></span>
+<span class="pl-s">       &lt;%/* Escaping chars */%&gt;       </span>
+<span class="pl-s">       This is the tePLSQL code block syntax &lt;\\% ... %\\&gt;</span>
+<span class="pl-s"></span>
+<span class="pl-s">       &lt;%/* Regards */%&gt;</span>
+<span class="pl-s">       Bye &lt;%=UPPER('${username}')%&gt;.]'</span>;
+
+   <span class="pl-c">--Key-value variables.</span>
+   p_vars (<span class="pl-s">'FullName'</span>) <span class="pl-k">:=</span> <span class="pl-s">'Oscar Salvador Magallanes'</span>;
+   p_vars (<span class="pl-s">'username'</span>) <span class="pl-k">:=</span> <span class="pl-s">'test'</span>;
+
+   p_template  <span class="pl-k">:=</span> teplsql.render (p_template, p_vars);
+
+   <span class="pl-c1"><span class="pl-c1">DBMS_OUTPUT.</span><span class="pl-c1">put_line</span></span> (p_template);
+<span class="pl-k">END</span>;</pre></div>
+
+<p>Result: </p>
+
+<pre><code>    Hi Oscar Salvador Magallanes!
+
+    Today 08-09-2015 is a great day!
+
+    Username: SYS
+
+    This is the tePLSQL code block syntax &lt;% ... %&gt;
+
+    Bye SYS.
+
+    PL/SQL procedure successfully completed.
+    Elapsed: 00:00:00.02
+</code></pre>
+
+<h4>
+<a id="html-example" class="anchor" href="#html-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>HTML Example</h4>
+
+<div class="highlight highlight-source-plsql-oracle"><pre><span class="pl-k">DECLARE</span>
+   p_template   <span class="pl-k">CLOB</span>;
+   p_vars       teplsql.t_assoc_array;
+<span class="pl-k">BEGIN</span>
+   p_template  <span class="pl-k">:=</span>
+      <span class="pl-s">q'[&lt;!DOCTYPE html&gt;</span>
+<span class="pl-s">    &lt;html&gt;</span>
+<span class="pl-s">      &lt;head&gt;</span>
+<span class="pl-s">        &lt;title&gt;${title}&lt;/title&gt;</span>
+<span class="pl-s">      &lt;/head&gt;</span>
+<span class="pl-s">      &lt;body&gt;</span>
+<span class="pl-s">        &lt;h1&gt; Print Sequence numbers &lt;/h1&gt;</span>
+<span class="pl-s">        &lt;br&gt;</span>
+<span class="pl-s">        &lt;%for i in ${initValue} .. ${lastValue} loop %&gt;</span>
+<span class="pl-s">        &lt;%= i %&gt;&lt;br&gt;</span>
+<span class="pl-s">        &lt;% end loop;%&gt;</span>
+<span class="pl-s">        &lt;h1&gt; Print the Odd numbers of sequence &lt;/h1&gt;</span>
+<span class="pl-s">        &lt;br&gt;    </span>
+<span class="pl-s">        &lt;% /*You can insert PLSQL comments as always*/ </span>
+<span class="pl-s">        for i in ${initValue} .. ${lastValue}</span>
+<span class="pl-s">        loop </span>
+<span class="pl-s">            if mod(i,2) &lt;&gt; 0 </span>
+<span class="pl-s">            then %&gt;</span>
+<span class="pl-s">        &lt;%= i %&gt;&lt;br&gt;</span>
+<span class="pl-s">        &lt;% end if; </span>
+<span class="pl-s">        end loop; %&gt;</span>
+<span class="pl-s">      &lt;/body&gt;</span>
+<span class="pl-s">    &lt;/html&gt;]'</span>;
+
+   <span class="pl-c">--Key-value variables.</span>
+   p_vars (<span class="pl-s">'title'</span>) <span class="pl-k">:=</span> <span class="pl-s">'Number sequence'</span>;
+   p_vars (<span class="pl-s">'initValue'</span>) <span class="pl-k">:=</span> <span class="pl-c1">5</span>;
+   p_vars (<span class="pl-s">'lastValue'</span>) <span class="pl-k">:=</span> <span class="pl-c1">20</span>;
+
+   p_template  <span class="pl-k">:=</span> teplsql.render (p_template, p_vars);
+
+   <span class="pl-c1"><span class="pl-c1">DBMS_OUTPUT.</span><span class="pl-c1">put_line</span></span> (p_template);
+<span class="pl-k">END</span>;</pre></div>
+
+<p>Result: </p>
+
+<div class="highlight highlight-text-html-basic"><pre>&lt;!DOCTYPE html&gt;
+    &lt;<span class="pl-ent">html</span>&gt;
+      &lt;<span class="pl-ent">head</span>&gt;
+        &lt;<span class="pl-ent">title</span>&gt;Number sequence&lt;/<span class="pl-ent">title</span>&gt;
+      &lt;/<span class="pl-ent">head</span>&gt;
+      &lt;<span class="pl-ent">body</span>&gt;
+        &lt;<span class="pl-ent">h1</span>&gt; Print Sequence numbers &lt;/<span class="pl-ent">h1</span>&gt;
+        &lt;<span class="pl-ent">br</span>&gt;
+        5&lt;<span class="pl-ent">br</span>&gt;
+        6&lt;<span class="pl-ent">br</span>&gt;
+        7&lt;<span class="pl-ent">br</span>&gt;
+        8&lt;<span class="pl-ent">br</span>&gt;
+        9&lt;<span class="pl-ent">br</span>&gt;
+        10&lt;<span class="pl-ent">br</span>&gt;
+        11&lt;<span class="pl-ent">br</span>&gt;
+        12&lt;<span class="pl-ent">br</span>&gt;
+        13&lt;<span class="pl-ent">br</span>&gt;
+        14&lt;<span class="pl-ent">br</span>&gt;
+        15&lt;<span class="pl-ent">br</span>&gt;
+        16&lt;<span class="pl-ent">br</span>&gt;
+        17&lt;<span class="pl-ent">br</span>&gt;
+        18&lt;<span class="pl-ent">br</span>&gt;
+        19&lt;<span class="pl-ent">br</span>&gt;
+        20&lt;<span class="pl-ent">br</span>&gt;
+        &lt;<span class="pl-ent">h1</span>&gt; Print the Odd numbers of sequence &lt;/<span class="pl-ent">h1</span>&gt;
+        &lt;<span class="pl-ent">br</span>&gt;    
+        5&lt;<span class="pl-ent">br</span>&gt;
+        7&lt;<span class="pl-ent">br</span>&gt;
+        9&lt;<span class="pl-ent">br</span>&gt;
+        11&lt;<span class="pl-ent">br</span>&gt;
+        13&lt;<span class="pl-ent">br</span>&gt;
+        15&lt;<span class="pl-ent">br</span>&gt;
+        17&lt;<span class="pl-ent">br</span>&gt;
+        19&lt;<span class="pl-ent">br</span>&gt;
+      &lt;/<span class="pl-ent">body</span>&gt;
+    &lt;/<span class="pl-ent">html</span>&gt;
+    PL/SQL procedure successfully completed.
+    Elapsed: 00:00:00.02</pre></div>
+
+<h4>
+<a id="declaration-and-instructions" class="anchor" href="#declaration-and-instructions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Declaration and instructions</h4>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>    <span class="pl-k">DECLARE</span>
+       p_template   <span class="pl-k">CLOB</span>;
+       p_vars       teplsql.t_assoc_array;
+    <span class="pl-k">BEGIN</span>
+       p_template  <span class="pl-k">:=</span> 
+       <span class="pl-s">q'[&lt;%! lang_name VARCHAR2(10) := 'PL/SQL';</span>
+<span class="pl-s">           l_random_number pls_integer := ROUND(DBMS_RANDOM.VALUE (1, 9));</span>
+<span class="pl-s">          %&gt; </span>
+<span class="pl-s">            The 'sequence' is used in scripting language: &lt;%=lang_name %&gt;.            </span>
+<span class="pl-s">            The result of the operation ${someInValue} * &lt;%= l_random_number %&gt; is &lt;%= ${someInValue} * l_random_number %&gt;</span>
+<span class="pl-s">        ]'</span>;
+
+       <span class="pl-c">--Key-value variables.   </span>
+       p_vars (<span class="pl-s">'someInValue'</span>) <span class="pl-k">:=</span> <span class="pl-c1">5</span>;   
+
+       p_template  <span class="pl-k">:=</span> teplsql.render (p_template, p_vars);
+
+       <span class="pl-c1"><span class="pl-c1">DBMS_OUTPUT.</span><span class="pl-c1">put_line</span></span> (p_template);
+    <span class="pl-k">END</span>;</pre></div>
+
+<p>Result:</p>
+
+<pre><code>    The 'sequence' is used in scripting language: PL/SQL.
+    The result of the operation 5 * 7 is 35
+</code></pre>
+
+<p><a name="tmplInObjects"></a></p>
+
+<h4>
+<a id="templates-embebed-in-objects" class="anchor" href="#templates-embebed-in-objects" aria-hidden="true"><span class="octicon octicon-link"></span></a>Templates embebed in objects</h4>
+
+<p>tePLSQL templates can be stored inside PL/SQL program unit spec or bodies.</p>
+
+<p>In order to place a template into a program unit you have to create a non-compiled section in the latter with the aid of PL/SQL conditional compilation directives:</p>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>    <span class="pl-k">CREATE OR REPLACE</span> <span class="pl-k">PACKAGE</span> <span class="pl-en">test_tmpl</span>
+    <span class="pl-k">AS</span>
+    $<span class="pl-k">if</span> <span class="pl-c1">false</span> $<span class="pl-k">then</span>
+    <span class="pl-k">&lt;</span>%! x <span class="pl-k">pls_integer</span> <span class="pl-k">:=</span> <span class="pl-c1">1</span> <span class="pl-k">+</span> <span class="pl-c1">1</span>; %<span class="pl-k">&gt;</span>
+    The variable x has the <span class="pl-c1">value</span>: <span class="pl-k">&lt;</span>%<span class="pl-k">=</span> x %<span class="pl-k">&gt;</span>
+    $<span class="pl-k">end</span>
+    <span class="pl-k">END</span> test_tmpl;</pre></div>
+
+<p>Process the template:</p>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>    <span class="pl-k">DECLARE</span>
+       result   <span class="pl-k">CLOB</span>;
+    <span class="pl-k">BEGIN</span>
+       result      <span class="pl-k">:=</span> teplsql.process (<span class="pl-s">'test_tmpl'</span>);
+       <span class="pl-c1"><span class="pl-c1">DBMS_OUTPUT.</span><span class="pl-c1">put_line</span></span> (result);
+    <span class="pl-k">END</span>;</pre></div>
+
+<p>Result:</p>
+
+<pre><code>The variable x has the value: 2
+</code></pre>
+
+<h5>
+<a id="named-templates" class="anchor" href="#named-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Named Templates</h5>
+
+<p>In order to store several templates in a single object correctly you must
+specify template characteristics. </p>
+
+<p>Use the <code>&lt;%@ template ... %&gt;</code> directive to specify characteristics of the template:</p>
+
+<ul>
+<li>What is the name of the template</li>
+<li>What is the version of the template</li>
+<li>Any other user-defined feature</li>
+</ul>
+
+<p>The characteristics are a pair of key-value separated by commas</p>
+
+<h6>
+<a id="syntax" class="anchor" href="#syntax" aria-hidden="true"><span class="octicon octicon-link"></span></a>Syntax</h6>
+
+<p><code>&lt;%@ template key=value, key2=value2 %&gt;</code></p>
+
+<p>The syntax is case-sensitive but space-insensitive. Values with blanks are not allowed.</p>
+
+<h6>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h6>
+
+<p>Defining the template name</p>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>    <span class="pl-k">CREATE OR REPLACE</span> <span class="pl-k">PACKAGE</span> <span class="pl-en">test_tmpl</span>
+    <span class="pl-k">AS</span>
+
+    $<span class="pl-k">if</span> <span class="pl-c1">false</span> $<span class="pl-k">then</span>
+    <span class="pl-k">&lt;</span>%@ template 
+        name<span class="pl-k">=</span>adding,
+        version<span class="pl-k">=</span><span class="pl-c1">0.1</span> %<span class="pl-k">&gt;</span>
+    <span class="pl-k">&lt;</span>%! x <span class="pl-k">pls_integer</span> <span class="pl-k">:=</span> <span class="pl-c1">1</span> <span class="pl-k">+</span> <span class="pl-c1">1</span>; %<span class="pl-k">&gt;</span>
+    Processing template ${template_name} with version ${template_version}
+    The variable x has the <span class="pl-c1">value</span>: <span class="pl-k">&lt;</span>%<span class="pl-k">=</span> x %<span class="pl-k">&gt;</span>
+    $<span class="pl-k">end</span>
+
+    $<span class="pl-k">if</span> <span class="pl-c1">false</span> $<span class="pl-k">then</span>
+    <span class="pl-k">&lt;</span>%@ template name<span class="pl-k">=</span>subtracting, version<span class="pl-k">=</span><span class="pl-c1">0.1</span>, revision<span class="pl-k">=</span><span class="pl-c1">3</span> %<span class="pl-k">&gt;</span>
+    <span class="pl-k">&lt;</span>%! y <span class="pl-k">pls_integer</span> <span class="pl-k">:=</span> <span class="pl-c1">1</span> <span class="pl-k">-</span> <span class="pl-c1">1</span>; %<span class="pl-k">&gt;</span>
+    Processing template ${template_name} with version ${template_version} <span class="pl-k">and</span> revision ${template_revision}
+    The variable y has the <span class="pl-c1">value</span>: <span class="pl-k">&lt;</span>%<span class="pl-k">=</span> y %<span class="pl-k">&gt;</span>
+    $<span class="pl-k">end</span>
+
+    <span class="pl-k">END</span> test_tmpl;</pre></div>
+
+<p>Process the "subtracting" template:</p>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>    <span class="pl-k">DECLARE</span>
+       result   <span class="pl-k">CLOB</span>;
+    <span class="pl-k">BEGIN</span>
+       result      <span class="pl-k">:=</span> teplsql.process (p_object_name <span class="pl-k">=&gt;</span> <span class="pl-s">'test_tmpl'</span>, p_template_name <span class="pl-k">=&gt;</span> <span class="pl-s">'subtracting'</span>);
+       <span class="pl-c1"><span class="pl-c1">DBMS_OUTPUT.</span><span class="pl-c1">put_line</span></span> (result);
+    <span class="pl-k">END</span>;</pre></div>
+
+<p>Result:</p>
+
+<pre><code>Processing template subtracting with version 0.1 and revision 3
+The variable y has the value: 0
+</code></pre>
+
+<p><a name="apiReference"></a></p>
+
+<h2>
+<a id="teplsql-api-reference" class="anchor" href="#teplsql-api-reference" aria-hidden="true"><span class="octicon octicon-link"></span></a>tePLSQL API reference</h2>
+
+<h3>
+<a id="render" class="anchor" href="#render" aria-hidden="true"><span class="octicon octicon-link"></span></a>RENDER</h3>
+
+<p>Renders the template received as parameter. </p>
+
+<h4>
+<a id="syntax-1" class="anchor" href="#syntax-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Syntax</h4>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>   <span class="pl-k">FUNCTION</span> <span class="pl-en">render</span> (p_template <span class="pl-k">IN</span> <span class="pl-k">CLOB</span>, p_vars <span class="pl-k">IN</span> t_assoc_array <span class="pl-k">DEFAULT</span> null_assoc_array )
+      <span class="pl-k">RETURN</span> <span class="pl-k">CLOB</span>;</pre></div>
+
+<h4>
+<a id="parameters" class="anchor" href="#parameters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parameters</h4>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p_template</td>
+<td>The template's body.</td>
+</tr>
+<tr>
+<td>p_vars</td>
+<td>The template's arguments.</td>
+</tr>
+<tr>
+<td>return CLOB</td>
+<td>The processed template.</td>
+</tr>
+</tbody>
+</table>
+
+<h3>
+<a id="process" class="anchor" href="#process" aria-hidden="true"><span class="octicon octicon-link"></span></a>PROCESS</h3>
+
+<p>Rceives the name of the object, usually a package, which contains an embedded template. The template is extracted and is rendered with <code>render</code> function </p>
+
+<h4>
+<a id="syntax-2" class="anchor" href="#syntax-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Syntax</h4>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>   <span class="pl-k">FUNCTION</span> <span class="pl-en">process</span> (p_object_name   <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span>
+                   , p_vars          <span class="pl-k">IN</span> t_assoc_array <span class="pl-k">DEFAULT</span> null_assoc_array
+                   , p_template_name <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span> <span class="pl-k">DEFAULT</span> <span class="pl-c1">NULL</span>
+                   , p_object_type   <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span> <span class="pl-k">DEFAULT</span> <span class="pl-s">'PACKAGE'</span>
+                   , p_schema        <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span> <span class="pl-k">DEFAULT</span> <span class="pl-c1">NULL</span> )
+      <span class="pl-k">RETURN</span> <span class="pl-k">CLOB</span>;</pre></div>
+
+<h4>
+<a id="parameters-1" class="anchor" href="#parameters-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parameters</h4>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p_object_name</td>
+<td>The name of the object (usually the name of the package).</td>
+</tr>
+<tr>
+<td>p_vars</td>
+<td>The template's arguments.</td>
+</tr>
+<tr>
+<td>p_template_name</td>
+<td>The name of the template.</td>
+</tr>
+<tr>
+<td>p_object_type</td>
+<td>The type of the object (PACKAGE, PROCEDURE, FUNCTION...).</td>
+</tr>
+<tr>
+<td>p_schema</td>
+<td>The object's schema name.</td>
+</tr>
+<tr>
+<td>return CLOB</td>
+<td>The processed template.</td>
+</tr>
+</tbody>
+</table>
+
+<h3>
+<a id="print" class="anchor" href="#print" aria-hidden="true"><span class="octicon octicon-link"></span></a>PRINT</h3>
+
+<p>Prints received data into the buffer</p>
+
+<h4>
+<a id="syntax-3" class="anchor" href="#syntax-3" aria-hidden="true"><span class="octicon octicon-link"></span></a>Syntax</h4>
+
+<div class="highlight highlight-source-plsql-oracle"><pre>   <span class="pl-k">PROCEDURE</span> <span class="pl-en">PRINT</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">CLOB</span>);
+
+   <span class="pl-k">PROCEDURE</span> <span class="pl-en">p</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">CLOB</span>);
+
+   <span class="pl-k">PROCEDURE</span> <span class="pl-en">PRINT</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span>);
+
+   <span class="pl-k">PROCEDURE</span> <span class="pl-en">p</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">VARCHAR2</span>);
+
+   <span class="pl-k">PROCEDURE</span> <span class="pl-en">PRINT</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">NUMBER</span>);
+
+   <span class="pl-k">PROCEDURE</span> <span class="pl-en">p</span> (p_data <span class="pl-k">IN</span> <span class="pl-k">NUMBER</span>);</pre></div>
+
+<h4>
+<a id="parameters-2" class="anchor" href="#parameters-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parameters</h4>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p_data</td>
+<td>The data to print into buffer</td>
+</tr>
+</tbody>
+</table>
+
+<p><a name="contributing"></a></p>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>If you have ideas, get in touch directly.</p>
+
+<p>Please inser at the bottom of your commit message the following line using your name and e-mail address .</p>
+
+<pre><code>Signed-off-by: Your Name &lt;you@example.org&gt;
+</code></pre>
+
+<p>This can be automatically added to pull requests by committing with:</p>
+
+<pre><code>git commit --signoff
+</code></pre>
+
+<p><a name="license"></a></p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright 2015 Oscar Salvador Magallanes </p>
+
+<p>tePLSQL is under MIT license. </p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
