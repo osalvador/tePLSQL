@@ -193,6 +193,43 @@ Result:
     Elapsed: 00:00:00.02
 ```
 
+#### Excel example
+Generating formatted Excel file. Save the result as .xml file and open it with MS Excel.
+
+```plsql
+set timing on;
+set serveroutput on;
+
+DECLARE
+   p_template   CLOB;
+   p_vars       teplsql.t_assoc_array;
+BEGIN
+   p_template  :=
+      q'[<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ ...
+   <% for i in 1 .. 26 loop%>
+   <Row ss:AutoFitHeight="0">
+    <Cell ss:Index="2" ss:StyleID="s65"><Data ss:Type="Number"><%=i%></Data></Cell>
+    <Cell ss:StyleID="s66"><Data ss:Type="String"><%=CHR (i + 64)%></Data></Cell>
+    <Cell ss:StyleID="s66"><Data ss:Type="Number"><%=i%></Data></Cell>
+    <Cell ss:StyleID="s66"><Data ss:Type="Number"><%=i+10%></Data></Cell>
+    <Cell ss:StyleID="s67"><Data ss:Type="Number"><%=i+20%></Data></Cell>
+   </Row> 
+   <% end loop; %>
+ ...
+</Workbook>]';
+
+   p_template  := teplsql.render (p_vars, p_template);
+
+   DBMS_OUTPUT.put_line (p_template);
+END;
+```
+
+Result
+
+![Excel screenshot](ExcelScreenShot.png)
 
 #### Declaration and instructions
 
