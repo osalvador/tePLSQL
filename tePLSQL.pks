@@ -28,11 +28,11 @@ AS
    /**
    * Renders the template received as parameter.
    *
-   * @param  p_template  the template's body.
    * @param  p_vars      the template's arguments.
+   * @param  p_template  the template's body.   
    * @return             the processed template.
    */
-   FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array )
+   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array, p_template IN CLOB)
       RETURN CLOB;
 
    /**
@@ -40,15 +40,16 @@ AS
    * which contains an embedded template.
    * The template is extracted and is rendered with `render` function
    *
-   * @param  p_object_name      the name of the object (usually the name of the package)
    * @param  p_vars             the template's arguments.
    * @param  p_template_name    the name of the template
+   * @param  p_object_name      the name of the object (usually the name of the package)
    * @param  p_object_type      the type of the object (PACKAGE, PROCEDURE, FUNCTION...)
+   * @param  p_schema           the object's schema name.
    * @return                    the processed template.
    */
-   FUNCTION process (p_object_name     IN VARCHAR2
-                   , p_vars            IN t_assoc_array DEFAULT null_assoc_array
+   FUNCTION process (p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
+                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'                                      
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;

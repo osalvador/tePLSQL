@@ -26,7 +26,8 @@ The next table list tePLSQL elements that you can use in your templates.
 
 |Element | Name | Description
 |--------|------|------------- 
-|`<%@ template ... %>` | Template Directive | Characteristics of the template
+|`<%@ template key=value,key=value %>` | Template Directive | Characteristics of the template
+|`<%@ include(...) %>` | Include Directive | Includes and evaluates the specified template
 |`${varName}` | External variable | The variables are defined in a key-value associative array that receives as parameter by the render
 |`<%! ... %>` | Declaration block | The declaration for a set of PL/SQL variables that are visible throughout the page, not just within the next BEGIN/END block.
 |`<% ... %>` | Code block |A set of PL/SQL statements to be executed when the template is run.
@@ -83,7 +84,7 @@ BEGIN
    p_vars ('FullName') := 'Oscar Salvador Magallanes';
    p_vars ('username') := 'test';
 
-   p_template  := teplsql.render (p_template, p_vars);
+   p_template  := teplsql.render (p_vars, p_template);
 
    DBMS_OUTPUT.put_line (p_template);
 END;
@@ -144,7 +145,7 @@ BEGIN
    p_vars ('initValue') := 5;
    p_vars ('lastValue') := 20;
 
-   p_template  := teplsql.render (p_template, p_vars);
+   p_template  := teplsql.render (p_vars, p_template);
 
    DBMS_OUTPUT.put_line (p_template);
 END;
@@ -196,25 +197,25 @@ Result:
 #### Declaration and instructions
 
 ```plsql
-    DECLARE
-       p_template   CLOB;
-       p_vars       teplsql.t_assoc_array;
-    BEGIN
-       p_template  := 
-       q'[<%! lang_name VARCHAR2(10) := 'PL/SQL';
-           l_random_number pls_integer := ROUND(DBMS_RANDOM.VALUE (1, 9));
-          %> 
-            The 'sequence' is used in scripting language: <%=lang_name %>.            
-            The result of the operation ${someInValue} * <%= l_random_number %> is <%= ${someInValue} * l_random_number %>
-        ]';
+DECLARE
+   p_template   CLOB;
+   p_vars       teplsql.t_assoc_array;
+BEGIN
+   p_template  := 
+   q'[<%! lang_name VARCHAR2(10) := 'PL/SQL';
+       l_random_number pls_integer := ROUND(DBMS_RANDOM.VALUE (1, 9));
+      %> 
+        The 'sequence' is used in scripting language: <%=lang_name %>.            
+        The result of the operation ${someInValue} * <%= l_random_number %> is <%= ${someInValue} * l_random_number %>
+    ]';
 
-       --Key-value variables.   
-       p_vars ('someInValue') := 5;   
+   --Key-value variables.   
+   p_vars ('someInValue') := 5;   
 
-       p_template  := teplsql.render (p_template, p_vars);
+   p_template  := teplsql.render (p_vars, p_template);
 
-       DBMS_OUTPUT.put_line (p_template);
-    END;
+   DBMS_OUTPUT.put_line (p_template);
+END;
 ```
 
 Result:
@@ -230,24 +231,25 @@ tePLSQL templates can be stored inside PL/SQL program unit spec or bodies.
 In order to place a template into a program unit you have to create a non-compiled section in the latter with the aid of PL/SQL conditional compilation directives:
 
 ```plsql
-    CREATE OR REPLACE PACKAGE test_tmpl
-    AS
-    $if false $then
-    <%! x pls_integer := 1 + 1; %>
-    The variable x has the value: <%= x %>
-    $end
-    END test_tmpl;
+CREATE OR REPLACE PACKAGE test_tmpl
+AS
+$if false $then
+<%! x pls_integer := 1 + 1; %>
+The variable x has the value: <%= x %>
+$end
+END test_tmpl;
 ```
 
 Process the template:
 
 ```plsql
-    DECLARE
-       result   CLOB;
-    BEGIN
-       result      := teplsql.process ('test_tmpl');
-       DBMS_OUTPUT.put_line (result);
-    END;
+DECLARE
+   result   CLOB;
+   p_vars       teplsql.t_assoc_array;
+BEGIN
+   result      := teplsql.process (p_vars,null,'test_tmpl');
+   DBMS_OUTPUT.put_line (result);
+END;
 ```
 
 Result:
@@ -278,37 +280,37 @@ The syntax is case-sensitive but space-insensitive. Values with blanks are not a
 Defining the template name
 
 ```plsql
-    CREATE OR REPLACE PACKAGE test_tmpl
-    AS
+CREATE OR REPLACE PACKAGE test_tmpl
+AS
 
-    $if false $then
-    <%@ template 
-        name=adding,
-        version=0.1 %>
-    <%! x pls_integer := 1 + 1; %>
-    Processing template ${template_name} with version ${template_version}
-    The variable x has the value: <%= x %>
-    $end
+$if false $then
+<%@ template 
+    name=adding,
+    version=0.1 %>
+<%! x pls_integer := 1 + 1; %>
+Processing template ${template_name} with version ${template_version}
+The variable x has the value: <%= x %>
+$end
 
-    $if false $then
-    <%@ template name=subtracting, version=0.1, revision=3 %>
-    <%! y pls_integer := 1 - 1; %>
-    Processing template ${template_name} with version ${template_version} and revision ${template_revision}
-    The variable y has the value: <%= y %>
-    $end
+$if false $then
+<%@ template name=subtracting, version=0.1, revision=3 %>
+<%! y pls_integer := 1 - 1; %>
+Processing template ${template_name} with version ${template_version} and revision ${template_revision}
+The variable y has the value: <%= y %>
+$end
 
-    END test_tmpl;
+END test_tmpl;
 ```
 
 Process the "subtracting" template:
 
 ```plsql
-    DECLARE
-       result   CLOB;
-    BEGIN
-       result      := teplsql.process (p_object_name => 'test_tmpl', p_template_name => 'subtracting');
-       DBMS_OUTPUT.put_line (result);
-    END;
+DECLARE
+   result   CLOB;
+BEGIN
+   result      := teplsql.process (p_object_name => 'test_tmpl', p_template_name => 'subtracting');
+   DBMS_OUTPUT.put_line (result);
+END;
 ```
 
 Result:
@@ -327,7 +329,7 @@ Renders the template received as parameter.
 #### Syntax
 
 ```plsql
-   FUNCTION render (p_template IN CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array )
+   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array,p_template IN CLOB)
       RETURN CLOB;
 ```
 
@@ -335,8 +337,8 @@ Renders the template received as parameter.
 
 |Parameter | Description
 |----------|------------
-|p_template | The template's body.
 |p_vars | The template's arguments.
+|p_template | The template's body.
 | return CLOB | The processed template.
 
 ### PROCESS
@@ -346,21 +348,20 @@ Rceives the name of the object, usually a package, which contains an embedded te
 #### Syntax
 
 ```plsql
-   FUNCTION process (p_object_name   IN VARCHAR2
-                   , p_vars          IN t_assoc_array DEFAULT null_assoc_array
-                   , p_template_name IN VARCHAR2 DEFAULT NULL
-                   , p_object_type   IN VARCHAR2 DEFAULT 'PACKAGE'
-                   , p_schema        IN VARCHAR2 DEFAULT NULL )
-      RETURN CLOB;
+   FUNCTION process (p_vars            IN t_assoc_array DEFAULT null_assoc_array
+                   , p_template_name   IN VARCHAR2 DEFAULT NULL
+                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'                                      
+                   , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
+                   , p_schema          IN VARCHAR2 DEFAULT NULL )
 ```
 
 #### Parameters
 
 |Parameter | Description
 |----------|------------
-|p_object_name | The name of the object (usually the name of the package).
 |p_vars | The template's arguments.
 |p_template_name | The name of the template.
+|p_object_name | The name of the object (usually the name of the package).
 |p_object_type | The type of the object (PACKAGE, PROCEDURE, FUNCTION...).
 |p_schema | The object's schema name.
 | return CLOB | The processed template.
