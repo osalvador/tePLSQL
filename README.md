@@ -7,7 +7,7 @@ With tePLSQL you should prepare the data to display in your PL/SQL packages and 
 
 Now tePLSQL has the same syntax as the old fashion [Oracle PSP](http://docs.oracle.com/cd/E11882_01/appdev.112/e41502/adfns_psp.htm#ADFNS016) so you do not have to learn any new template language and your PSP will be supported by tePLSQL making some small modifications.
 
-Templates are processed and a single block of PL/SQL code being executed dynamically, as does the Oracle PSP loader.  
+Templates are processed and a single block of PL/SQL code being executed dynamically, as does the Oracle PSP loader do.  
 
 **topics**:
 
@@ -37,13 +37,13 @@ Templates are processed and a single block of PL/SQL code being executed dynamic
 ## Prerequisites for developing and deploying tePLSQL templates
 To develop and deploy tePLSQL templates, you must meet these prerequisites:
 
-- To write a tePLSQL templates you need access to a text. No other development tool is required.
+- To write a tePLSQL templates you need a text editor. No other development tool is required.
 - To load a tePLSQL template you need an account on the database in which to load the templates.    
 - To deploy tePLSQL template you must install tePLSQL package. 
 
 <a name="install"></a>
 ### Install
-Download and compile TEPLSQL.pks and TEPLSQL.pkb. No schema grants are necesary.
+Download and compile `TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary.
 
 <a name="compatibility"></a>
 ###Compatibility
@@ -185,7 +185,7 @@ END;
 | `object_type`| The type of the object (PACKAGE, PROCEDURE, FUNCTION...). Default PACKAGE.
 | `schema`| The schema of the object. Default NULL.
 
-You can use the include feature to pull in libraries of code into multiple templates. Alternatively, you can use this feature as a macro capability to include the same section of script code in multiple places in a page. 
+You can use the include feature to pull in libraries of code into multiple templates. Alternatively, you can use this feature as a macro capability to include the same section of script code in multiple places in a template. 
 
 #### Example
 This example includes a footer template
@@ -207,7 +207,7 @@ You can specify multiple declaration blocks; internally, they are all merged int
 
 You can also use explicit DECLARE blocks within the `<% ... %>` delimiters that are explained in "Specifying executable statements in a tePLSQL template". These declarations are only visible to the BEGIN/END block that follows them.
 
-To make things easier to maintain, keep all your directives and declarations near the beginning of a PL/SQL server page.
+To make things easier to maintain, keep all your directives and declarations near the beginning of a PL/SQL server template.
 
 #### Syntax
 ```plsql
@@ -215,7 +215,7 @@ To make things easier to maintain, keep all your directives and declarations nea
     [ PL/SQL declaration; ] ... %>
 ```
 
-The usual PL/SQL syntax is allowed within the block. The delimiters server as shorthand, enabling you to omit the DECLARE keyword. All declarations are available to the code later in the template
+The usual PL/SQL syntax is allowed within the block. The delimiters server as shorthand, enabling you to omit the DECLARE keyword. All declarations are available to the code later in the template.
 
 #### Example
 ```plsql
@@ -233,7 +233,7 @@ You can use the `<% ... %>` code block directive to run a set of PL/SQL statemen
 
 This element typically spans multiple lines, with individual PL/SQL statements ended by semicolons. The statements can include complete blocks. 
 
-The statements can also be the bracketing parts of IF/THEN/ELSE or BEGIN/END blocks. When a code block is split into multiple directives, you can put output text or other directives in the middle, and the middle pieces are conditionally executed when the stored procedure is run. The example provides an illustration of this technique.
+The statements can also be the bracketing parts of IF/THEN/ELSE or BEGIN/END blocks. When a code block is split into multiple directives, you can put output text or other directives in the middle, and the middle pieces are conditionally executed when the template is run. The example provides an illustration of this technique.
 
 All the usual PL/SQL syntax is allowed within the block.
 
@@ -265,7 +265,7 @@ All the usual PL/SQL syntax is allowed within the block.
 
 <a name="expression"></a>
 ###Substituting expression values in a tePLSQL template
-An expression directive outputs a single PL/SQL expression, such as a string, arithmetic expression, function call, or combination of these things. The result is substituted as a string at that spot in the output that is produced by the template. The expression result must be a string value or be able to be cast to a string. For any types that cannot be implicitly cast, such as DATE, pass the value to the PL/SQL TO_CHAR function.
+An expression directive outputs a single PL/SQL expression, such as a string, arithmetic expression, function call, or combination of these things. The result is substituted as a string at that spot in the output that is produced by the template. The expression result must be a string value or be able to be cast to a string. For any types that cannot be implicitly cast, such as DATE, pass the value to the PL/SQL `TO_CHAR` function.
 
 #### Syntax
 The syntax of an expression directive is as follows, where the expression placeholder is replaced by the desired expression:
@@ -807,7 +807,7 @@ DECLARE  BEGIN tePLSQL.p(q'[Testing Error.
 
 `### Processed template ###` is the template converted into executable PL/SQL.
 
-You can see `ORA-01476: divisor is equal to zero ORA-06512: at line 2` means that in the first line of the `### Processed template ###` code you have the error. 
+You can see `ORA-01476: divisor is equal to zero ORA-06512: at line 2` means that in the second line of the `### Processed template ###` code you have the error. 
 
 ####Syntax error
 Rendering this template:
