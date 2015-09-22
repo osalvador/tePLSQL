@@ -9,7 +9,7 @@ Now tePLSQL has the same syntax as the old fashion [Oracle PSP](http://docs.orac
 
 Templates are processed and a single block of PL/SQL code being executed dynamically, as does the Oracle PSP loader do.  
 
-For a quick look see [basic example](#basic-example)
+For a quick look see [basic example](#basic-example). The best example of use tePLSQL is [tapiGen2](https://github.com/osalvador/tapiGen2)
 
 **topics**:
 
@@ -45,7 +45,7 @@ To develop and deploy tePLSQL templates, you must meet these prerequisites:
 
 <a name="install"></a>
 ### Install
-Download and compile `TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary.
+Download and compile `TE_TEMPLATES.sql`,`TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary.
 
 <a name="compatibility"></a>
 ###Compatibility
