@@ -9,6 +9,8 @@ Now tePLSQL has the same syntax as the old fashion [Oracle PSP](http://docs.orac
 
 Templates are processed and a single block of PL/SQL code being executed dynamically, as does the Oracle PSP loader do.  
 
+For a quick look see [basic example](#basic-example)
+
 **topics**:
 
 - [Prerequisites for developing and deploying tePLSQL templates](#prerequisites)
