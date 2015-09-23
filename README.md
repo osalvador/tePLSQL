@@ -295,6 +295,7 @@ tePLSQL has three reserved words:
   - `q'[]'`
   - `<%`
   - `%>`
+  - `\\n`
 
 tePLSQLP use `q'[]'` alternative quoting mechanism to print template text into buffer, and `<% %>` to define directives. 
 
@@ -310,6 +311,16 @@ Scaping reserved words:
 - q\\'[]\\'
 - <\\%
 - %\\>
+- \\\\n
+```
+
+Output:
+```
+Scaping reserved words:
+- q'[]'
+- <%
+- %>
+- \\n
 ```
 
 <a name="lineBreak"></a>
@@ -457,6 +468,17 @@ tePLSQL templates can be stored inside PL/SQL program unit spec or bodies.
 
 In order to place a template into a program unit you have to create a non-compiled section in the latter with the aid of PL/SQL conditional compilation directives:
 
+####Syntax
+```
+$if false $then
+... template ...
+$end
+```
+
+The syntax is case-sensitive but space-insensitive. Line breaks are not allowed. 
+
+####Example
+
 ```plsql
 CREATE OR REPLACE PACKAGE test_tmpl
 AS
@@ -480,7 +502,6 @@ Outout:
 ```
 The variable x has the value: 2
 ```
-
 
 ####Anonymous  templates
 An anonymous template must be the only template in its host object. The template resides in a non-compiled section and occupies it entirely. An example of an anonymous template placed in the `test_tmpl` package specification:
@@ -811,6 +832,8 @@ DECLARE  BEGIN tePLSQL.p(q'[Testing Error.
 
 You can see `ORA-01476: divisor is equal to zero ORA-06512: at line 2` means that in the second line of the `### Processed template ###` code you have the error. 
 
+The exception message will be append into the tePLSQL buffer. This helps you to find where the exception is occurred. tePLSQL trunc the buffer at maximum 500 characters to prevent the exception message is truncated in long templates.
+
 ####Syntax error
 Rendering this template:
 ```
@@ -909,6 +932,24 @@ PROCEDURE p (p_data IN NUMBER);
 |Parameter | Description
 |----------|------------
 |p_data | The data to print into buffer
+
+
+### OUTPUT_CLOB
+
+Output CLOB data to the DBMS_OUTPUT.PUT_LINE
+
+#### Syntax
+
+```plsql
+PROCEDURE output_clob(p_clob in CLOB);
+```
+
+#### Parameters
+
+|Parameter | Description
+|----------|------------
+|p_clob | The CLOB to print to the DBMS_OUTPUT
+
 
 <a name="contributing"></a>
 ## Contributing

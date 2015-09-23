@@ -9,6 +9,13 @@ AS
    null_assoc_array   t_assoc_array;
 
    /**
+   * Output CLOB data to the DBMS_OUTPUT.PUT_LINE
+   *
+   * @param  p_clob     the CLOB to print to the DBMS_OUTPUT 
+   */   
+   PROCEDURE output_clob(p_clob in CLOB);
+   
+   /**
    * Prints received data into the buffer
    *
    * @param  p_data     the data to print into buffer

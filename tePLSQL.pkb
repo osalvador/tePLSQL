@@ -3,6 +3,17 @@ CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
    
+   PROCEDURE output_clob (p_clob IN CLOB)
+   AS
+      l_offset   NUMBER DEFAULT 1 ;
+   BEGIN
+      LOOP
+         EXIT WHEN l_offset > DBMS_LOB.getlength (p_clob);
+         DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, 255, l_offset));
+         l_offset    := l_offset + 255;
+      END LOOP;
+   END output_clob;
+   
    /**
    * Receives the template directive key-value data separated by commas
    * and assign this key-values to the associative array
@@ -123,11 +134,11 @@ AS
              $THEN
                 l_tmp       :=
                    REGEXP_REPLACE (REGEXP_REPLACE (REGEXP_SUBSTR (l_object_ddl
-                                                                , '\$if false \$then' || CHR (10) || '([^\$end].*?)\$end'
+                                                                , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10) || '([^\$end].*?)\$end'
                                                                 , 1
                                                                 , i
                                                                 , 'n')
-                                                 , '\$if false \$then' || CHR (10)
+                                                 , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10)
                                                  , ''
                                                  , 1
                                                  , 1)
@@ -138,7 +149,7 @@ AS
              $ELSE
                 l_tmp       :=
                    REGEXP_SUBSTR (l_object_ddl
-                                , '\$if false \$then' || CHR (10) || '([^\$end].*?)\$end'
+                                , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10) || '([^\$end].*?)\$end'
                                 , 1
                                 , i
                                 , 'n'
@@ -285,6 +296,16 @@ AS
                        , 0
                        , 'n');
 
+      --Escaped chars except \\n
+      p_template  :=
+         REGEXP_REPLACE (p_template
+                       , '\\\\([^n])'
+                       , ']'');tePLSQL.p(q''[\1]'');tePLSQL.p(q''['
+                       , 1
+                       , 0
+                       , 'n');
+
+
       --New lines.
       p_template  :=
          REGEXP_REPLACE (p_template
@@ -374,15 +395,6 @@ AS
       --                , 1
       --                 , 0
       --                 , 'n');
-
-      --Escaped chars
-      p_template  :=
-         REGEXP_REPLACE (p_template
-                       , '\\\\(.)'
-                       , ']'');tePLSQL.p(q''[\1]'');tePLSQL.p(q''['
-                       , 1
-                       , 0
-                       , 'n');
 
       p_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || p_template || ' ]''); END;';
       
@@ -596,6 +608,7 @@ AS
       RETURN CLOB
    AS
     l_template   CLOB := p_template;
+    l_length pls_integer;
    BEGIN
       --Clear buffer
       g_buffer    := NULL;
@@ -651,6 +664,14 @@ AS
           EXCEPTION
              WHEN OTHERS
              THEN
+                --Trim buffer 
+                l_length := DBMS_LOB.getlength (g_buffer);
+                IF l_length > 500
+                THEN
+                    l_length := 500;
+                END IF;
+                g_buffer := DBMS_LOB.SUBSTR (g_buffer, l_length, DBMS_LOB.getlength (g_buffer) - (l_length - 1));
+                
                 --Print error
                 PRINT ('### tePLSQL Render Error ###');
                 PRINT (CHR (10));
@@ -668,6 +689,14 @@ AS
           EXCEPTION
              WHEN OTHERS
              THEN
+                --Trim buffer 
+                l_length := DBMS_LOB.getlength (g_buffer);
+                IF l_length > 500
+                THEN
+                    l_length := 500;
+                END IF;
+                g_buffer := DBMS_LOB.SUBSTR (g_buffer, l_length, DBMS_LOB.getlength (g_buffer) - (l_length - 1));
+                
                 --Print error
                 PRINT ('### tePLSQL Render Error ###');
                 PRINT (CHR (10));
@@ -711,7 +740,7 @@ AS
                                    , 'Template ' || p_template_name || ' not found in object ' || UPPER (p_object_name));
          ELSE
             raise_application_error (-20002
-                                   , 'The object ' || p_object_name || ' have no template inside $if false $then');
+                                   , 'The object ' || p_object_name || ' not has a template inside the "$if false $then"');
          END IF;
       END IF;
 
