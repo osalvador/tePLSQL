@@ -1,16 +1,33 @@
-/* Formatted on 16/09/2015 15:05:42 (QP5 v5.115.810.9015) */
 CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
    
    PROCEDURE output_clob (p_clob IN CLOB)
-   AS
-      l_offset   NUMBER DEFAULT 1 ;
+   IS
+      v_offset       PLS_INTEGER := 1;
+      v_new_line     PLS_INTEGER;
+      /**
+      * Since 10gR2 Oracle increase the limit of DBMS_OUTPUT to 32767
+      */
+      $if DBMS_DB_VERSION.ver_le_10_1  $then
+        v_chunk_size   PLS_INTEGER := 255;
+      $else
+        v_chunk_size   PLS_INTEGER := 32767;
+      $end      
    BEGIN
       LOOP
-         EXIT WHEN l_offset > DBMS_LOB.getlength (p_clob);
-         DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, 255, l_offset));
-         l_offset    := l_offset + 255;
+         EXIT WHEN v_offset > DBMS_LOB.getlength (p_clob);
+
+         v_new_line  := INSTR (DBMS_LOB.SUBSTR (p_clob, v_chunk_size, v_offset), CHR (10));
+
+         IF v_new_line > 0
+         THEN
+            DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, v_new_line - 1, v_offset));
+            v_offset    := v_offset + v_new_line;
+         ELSE
+            DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, v_chunk_size, v_offset));
+            v_offset    := v_offset + v_chunk_size;
+         END IF;
       END LOOP;
    END output_clob;
    
@@ -138,7 +155,7 @@ AS
                                                                 , 1
                                                                 , i
                                                                 , 'n')
-                                                 , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10)
+                                                 , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10)
                                                  , ''
                                                  , 1
                                                  , 1)
@@ -149,7 +166,7 @@ AS
              $ELSE
                 l_tmp       :=
                    REGEXP_SUBSTR (l_object_ddl
-                                , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10) || '([^\$end].*?)\$end'
+                                , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10) || '([^\$end].*?)\$end'
                                 , 1
                                 , i
                                 , 'n'
@@ -448,6 +465,15 @@ AS
           l_end       := 0;
 
           --get include directive
+          $if dbms_db_version.ver_le_10 $then
+          l_str_tmp   :=
+             REGEXP_REPLACE (REGEXP_REPLACE (REGEXP_SUBSTR (p_template
+                          , '<%@ include\((.*?)\)\s*%>'
+                          , 1
+                          , 1
+                          , 'n'),'<%@ include\(',''),'\)\s*%>','');
+          
+          $else
           l_str_tmp   :=
              REGEXP_SUBSTR (p_template
                           , '<%@ include\((.*?)\)\s*%>'
@@ -455,6 +481,7 @@ AS
                           , 1
                           , 'n'
                           , 1);
+          $end
 
           IF LENGTH (l_str_tmp) > 0
           THEN
