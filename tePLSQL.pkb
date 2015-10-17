@@ -105,7 +105,7 @@ AS
               SELECT   template
                 INTO   l_template
                 FROM   te_templates
-               WHERE   name = UPPER (l_template_name);
+               WHERE   UPPER(name) = UPPER (l_template_name);
           EXCEPTION
           WHEN NO_DATA_FOUND
           THEN
@@ -572,7 +572,7 @@ AS
                                 , 1);
                 END IF;
 
-                --Añadimos el resto de la fuente a la varbiable resultado
+                --Aï¿½adimos el resto de la fuente a la varbiable resultado
                 DBMS_LOB.COPY (l_result
                              , p_template
                              , DBMS_LOB.getlength (p_template)
