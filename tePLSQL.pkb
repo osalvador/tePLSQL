@@ -214,6 +214,7 @@ AS
    AS
       l_open_count    PLS_INTEGER;
       l_close_count   PLS_INTEGER;
+      l_template_name VARCHAR2(300);
    BEGIN
       $if dbms_db_version.ver_le_10 $then
           /**
@@ -243,8 +244,13 @@ AS
 
       IF l_open_count <> l_close_count
       THEN
+         IF p_vars.exists('template_name')
+         THEN
+           l_template_name := ' ' || p_vars('template_name');
+         END IF;
+        
          raise_application_error (-20001
-                                ,    '##Parser Exception processing the template: '||p_vars('template_name') 
+                                ,    '##Parser Exception processing the template'||l_template_name 
                                   || '. One or more tags (<% %>) are not closed: '
                                   || l_open_count
                                   || ' <> '
