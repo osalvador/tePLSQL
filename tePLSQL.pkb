@@ -272,7 +272,6 @@ AS
       l_tmp        CLOB;      
       i            PLS_INTEGER := 0;
    BEGIN
-      
       --Template directive
       $if dbms_db_version.ver_le_10 $then
           l_tmp       :=
@@ -650,7 +649,7 @@ AS
       --parse (l_template);
       
       --Get Includes
-      get_includes(l_template);      
+      get_includes(l_template, p_vars);      
       
       --Interpret the template
       interpret(l_template, p_vars);
@@ -664,7 +663,7 @@ AS
                        , 0
                        , 'n');
        
-      --DBMS_OUTPUT.put_line (l_template);
+      DBMS_OUTPUT.put_line (l_template);
       
       --Execute the template
       $if dbms_db_version.ver_le_10 $then
