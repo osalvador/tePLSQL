@@ -418,7 +418,7 @@ AS
       --                 , 0
       --                 , 'n');
 
-      p_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || p_template || ' ]''); END;';
+      p_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || p_template || ']''); END;';
       
    END interpret;
 
@@ -529,13 +529,12 @@ AS
                 include (l_template_name
                        , l_object_name
                        , l_object_type
-                       , l_object_type);
+                       , l_schema);
 
              --Interpret the template
              interpret (l_tmp, p_vars);
              
-             
-             l_tmp := ']''); '|| l_tmp ||' tePLSQL.p(q''[';
+             l_tmp := ']'');'|| l_tmp ||' tePLSQL.p(q''[';
 
              --Start and End of the expression
              l_start     :=
@@ -577,22 +576,27 @@ AS
                                 , 1);
                 END IF;
 
-                --A�adimos el resto de la fuente a la varbiable resultado
+                --Adding the rest of the source to the result variable                
+                IF l_end <= DBMS_LOB.getlength (p_template)
+                THEN
+               
                 DBMS_LOB.COPY (l_result
                              , p_template
                              , DBMS_LOB.getlength (p_template)
-                             , DBMS_LOB.getlength (l_result) +1
+                             , DBMS_LOB.getlength (l_result)+1
                              , l_end);
+                             
+                END IF;
              END IF;
-
 
              p_template  := l_result;
 
              DBMS_LOB.freetemporary (l_result);
+             
           END IF;
           
           l_number_includes := l_number_includes +1;
-          if l_number_includes >= 50 
+          if l_number_includes >= 50  
           then
             raise_application_error (-20001, 'Too much include directive in the template, Recursive include?');
           end if; 
@@ -663,7 +667,7 @@ AS
                        , 0
                        , 'n');
        
-      DBMS_OUTPUT.put_line (l_template);
+      --DBMS_OUTPUT.put_line (l_template);
       
       --Execute the template
       $if dbms_db_version.ver_le_10 $then

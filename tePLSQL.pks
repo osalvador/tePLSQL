@@ -1,4 +1,4 @@
-CREATE OR REPLACE PACKAGE teplsql
+CREATE OR REPLACE PACKAGE teplsql AUTHID CURRENT_USER
 AS
    --Define Associative Array
    TYPE t_assoc_array
