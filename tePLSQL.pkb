@@ -1,7 +1,7 @@
 CREATE OR REPLACE PACKAGE BODY teplsql
 AS
    g_buffer   CLOB;
-   
+
    PROCEDURE output_clob (p_clob IN CLOB)
    IS
       v_offset       PLS_INTEGER := 1;
@@ -13,24 +13,21 @@ AS
         v_chunk_size   PLS_INTEGER := 255;
       $else
         v_chunk_size   PLS_INTEGER := 32767;
-      $end      
+      $end
    BEGIN
+      DBMS_OUTPUT.enable (1000000);
+
       LOOP
          EXIT WHEN v_offset > DBMS_LOB.getlength (p_clob);
 
-         v_new_line  := INSTR (DBMS_LOB.SUBSTR (p_clob, v_chunk_size, v_offset), CHR (10));
-
-         IF v_new_line > 0
-         THEN
-            DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, v_new_line - 1, v_offset));
-            v_offset    := v_offset + v_new_line;
-         ELSE
-            DBMS_OUTPUT.put_line (DBMS_LOB.SUBSTR (p_clob, v_chunk_size, v_offset));
-            v_offset    := v_offset + v_chunk_size;
-         END IF;
+         DBMS_OUTPUT.put (DBMS_LOB.SUBSTR (p_clob, v_chunk_size, v_offset));
+         v_offset    := v_offset + v_chunk_size;
       END LOOP;
+
+      -- flush, inserts a new line at the end
+      DBMS_OUTPUT.new_line;
    END output_clob;
-   
+
    /**
    * Receives the template directive key-value data separated by commas
    * and assign this key-values to the associative array
@@ -68,13 +65,13 @@ AS
    * which contains an embedded template and return the template.
    *
    * @param  p_template_name    the name of the template
-   * @param  p_object_name      the name of the object (usually the name of the package)   
+   * @param  p_object_name      the name of the object (usually the name of the package)
    * @param  p_object_type      the type of the object (PACKAGE, PROCEDURE, FUNCTION...)
    * @param  p_schema           the schema of the object
    * @return                    the template.
    */
     FUNCTION include (p_template_name   IN VARCHAR2 DEFAULT NULL
-                    , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'                    
+                    , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
                     , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                     , p_schema          IN VARCHAR2 DEFAULT NULL )
        RETURN CLOB
@@ -84,21 +81,21 @@ AS
        l_template     CLOB;
        l_tmp          CLOB;
        i              PLS_INTEGER := 1;
-       l_found        PLS_INTEGER := 0;       
+       l_found        PLS_INTEGER := 0;
        l_object_name     VARCHAR2 (64);
        l_template_name   VARCHAR2 (64);
        l_object_type     VARCHAR2 (64);
-       l_schema          VARCHAR2 (64);       
+       l_schema          VARCHAR2 (64);
     BEGIN
-    
+
         --Force Defaults
         l_template_name := p_template_name;
-        l_object_name := NVL(p_object_name,'TE_TEMPLATES');    
+        l_object_name := NVL(p_object_name,'TE_TEMPLATES');
         l_object_type := NVL(p_object_type,'PACKAGE');
         l_schema := p_schema;
-        
+
        --Search for the template in the table TE_TEMPLATES
-       IF  l_template_name IS NOT NULL 
+       IF  l_template_name IS NOT NULL
        AND l_object_name = 'TE_TEMPLATES'
        THEN
           BEGIN
@@ -109,14 +106,14 @@ AS
           EXCEPTION
           WHEN NO_DATA_FOUND
           THEN
-            l_template := EMPTY_CLOB(); 
+            l_template := EMPTY_CLOB();
           END;
-          
+
            RETURN l_template;
-           
+
        ELSE
           --Search the template in other Oracle Object
-          
+
           --Get package source DDL
           l_object_ddl :=
              DBMS_METADATA.get_ddl (NVL (UPPER (l_object_type), 'PACKAGE'), UPPER (l_object_name), UPPER (l_schema));
@@ -185,7 +182,7 @@ AS
    /**
    * Bind associative array variables in the template
    *
-   * @param  p_template      the template 
+   * @param  p_template      the template
    * @param  p_vars        the associative array
    */
    PROCEDURE bind_vars (p_template IN OUT NOCOPY CLOB, p_vars IN t_assoc_array)
@@ -207,9 +204,9 @@ AS
    /**
    * Parse template marks
    *
-   * @param  p_template      the template 
+   * @param  p_template      the template
    * @param  p_vars        the associative array
-   */   
+   */
    PROCEDURE parse (p_template IN CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array)
    AS
       l_open_count    PLS_INTEGER;
@@ -248,9 +245,9 @@ AS
          THEN
            l_template_name := ' ' || p_vars('template_name');
          END IF;
-        
+
          raise_application_error (-20001
-                                ,    '##Parser Exception processing the template'||l_template_name 
+                                ,    '##Parser Exception processing the template'||l_template_name
                                   || '. One or more tags (<% %>) are not closed: '
                                   || l_open_count
                                   || ' <> '
@@ -262,14 +259,14 @@ AS
    /**
    * Interprets the received template and convert it into executable plsql
    *
-   * @param  p_template    the template 
+   * @param  p_template    the template
    * @param  p_vars        the associative array
-   */   
+   */
    PROCEDURE interpret (p_template IN OUT NOCOPY CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array)
-   AS   
+   AS
       l_vars       t_assoc_array := p_vars;
       l_declare    CLOB;
-      l_tmp        CLOB;      
+      l_tmp        CLOB;
       i            PLS_INTEGER := 0;
    BEGIN
       --Template directive
@@ -295,7 +292,7 @@ AS
 
       --Bind the variables into template
       bind_vars (p_template, l_vars);
-      
+
       --Null all variables not binded
       p_template    := REGEXP_REPLACE (p_template, '\$\{\S*\}', '');
 
@@ -308,11 +305,11 @@ AS
                        , CHR(13)||CHR(10)
                        , CHR(10)
                        , 1,0,'nm');
-            
+
       --Delete all template directives
       p_template  :=
          REGEXP_REPLACE (p_template
-                       , '<%@ template([^%>].*?)\s*%>[[:blank:]]*\s$?'                       
+                       , '<%@ template([^%>].*?)\s*%>[[:blank:]]*\s$?'
                        , ''
                        , 1
                        , 0
@@ -340,7 +337,7 @@ AS
 
       --Delete the line breaks for lines ending in %>[blanks]CHR(10)
       p_template  :=
-         REGEXP_REPLACE (p_template                       
+         REGEXP_REPLACE (p_template
                        , '(%>[[:blank:]]*?' || CHR (10) || ')'
                        , '%>'
                        , 1
@@ -350,7 +347,7 @@ AS
       --Delete new lines with !\n
       p_template  :=
          REGEXP_REPLACE (p_template
-                       , '([[:blank:]]*\!\\n[[:blank:]]*' || CHR (10) || '?[[:blank:]]*)'                                              
+                       , '([[:blank:]]*\!\\n[[:blank:]]*' || CHR (10) || '?[[:blank:]]*)'
                        , ''
                        , 1
                        , 0
@@ -358,8 +355,8 @@ AS
 
       -- Delete all blanks before <% in the beginning of each line
       p_template  :=
-         REGEXP_REPLACE (p_template                       
-                       , '(^[[:blank:]]*<%)'                       
+         REGEXP_REPLACE (p_template
+                       , '(^[[:blank:]]*<%)'
                        , '<%'
                        , 1
                        , 0
@@ -380,7 +377,7 @@ AS
          $else
              l_tmp       :=
                 REGEXP_SUBSTR (p_template
-                             , '<%!([^%>].*?)%>'                             
+                             , '<%!([^%>].*?)%>'
                              , 1
                              , i
                              , 'n'
@@ -394,7 +391,7 @@ AS
       --Delete declaration blocks from template
       p_template  :=
          REGEXP_REPLACE (p_template
-                       , '<%!([^%>].*?)%>'                        
+                       , '<%!([^%>].*?)%>'
                        , ''
                        , 1
                        , 0
@@ -403,7 +400,7 @@ AS
       --Expresison directive
       p_template  :=
          REGEXP_REPLACE (p_template
-                       , '<%=([^%>].*?)%>'                         
+                       , '<%=([^%>].*?)%>'
                        , ']'');tePLSQL.p(\1);tePLSQL.p(q''['
                        , 1
                        , 0
@@ -419,16 +416,16 @@ AS
       --                 , 'n');
 
       p_template  := 'DECLARE ' || l_declare || ' BEGIN tePLSQL.p(q''[' || p_template || ']''); END;';
-      
+
    END interpret;
 
    /**
    * Search for include directives, includes and evaluates the specified templates.
    * Nested include are allowed
    *
-   * @param  p_template    the template 
+   * @param  p_template    the template
    * @param  p_vars        the associative array
-   */     
+   */
    PROCEDURE get_includes (p_template IN OUT NOCOPY CLOB, p_vars IN t_assoc_array DEFAULT null_assoc_array )
     AS
        l_tmp             CLOB;
@@ -449,7 +446,7 @@ AS
        l_number_includes PLS_INTEGER := 0;
     BEGIN
        /*
-       --Pseudocode     
+       --Pseudocode
        while there includes
        do
            get include
@@ -459,7 +456,7 @@ AS
        */
        WHILE REGEXP_INSTR (p_template, '<%@ include\((.*?)\)\s*%>') <> 0
        LOOP
-          --Init          
+          --Init
           l_str_tmp   := NULL;
           l_object_name := NULL;
           l_template_name := NULL;
@@ -477,7 +474,7 @@ AS
                           , 1
                           , 1
                           , 'n'),'<%@ include\(',''),'\)\s*%>','');
-          
+
           $else
           l_str_tmp   :=
              REGEXP_SUBSTR (p_template
@@ -508,7 +505,7 @@ AS
              THEN
                 l_template_name := l_strig_tt (1);
              END IF;
-             
+
              IF l_strig_tt.EXISTS (2)
              THEN
                 l_object_name := l_strig_tt (2);
@@ -533,7 +530,7 @@ AS
 
              --Interpret the template
              interpret (l_tmp, p_vars);
-             
+
              l_tmp := ']'');'|| l_tmp ||' tePLSQL.p(q''[';
 
              --Start and End of the expression
@@ -552,7 +549,7 @@ AS
                             , 1
                             , 1
                             , 'n');
-             
+
              --concatenate result template into first template
              IF (NVL (l_start, 0) > 0)
              THEN
@@ -576,31 +573,31 @@ AS
                                 , 1);
                 END IF;
 
-                --Adding the rest of the source to the result variable                
+                --Adding the rest of the source to the result variable
                 IF l_end <= DBMS_LOB.getlength (p_template)
                 THEN
-               
+
                 DBMS_LOB.COPY (l_result
                              , p_template
                              , DBMS_LOB.getlength (p_template)
                              , DBMS_LOB.getlength (l_result)+1
                              , l_end);
-                             
+
                 END IF;
              END IF;
 
              p_template  := l_result;
 
              DBMS_LOB.freetemporary (l_result);
-             
+
           END IF;
-          
+
           l_number_includes := l_number_includes +1;
-          if l_number_includes >= 50  
+          if l_number_includes >= 50
           then
             raise_application_error (-20001, 'Too much include directive in the template, Recursive include?');
-          end if; 
-          
+          end if;
+
        END LOOP;
     END get_includes;
 
@@ -640,7 +637,9 @@ AS
       g_buffer    := g_buffer || TO_CHAR (p_data);
    END p;
 
-   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array, p_template IN CLOB)
+   FUNCTION render (p_vars             IN            t_assoc_array DEFAULT null_assoc_array
+                  , p_template         IN            CLOB
+                  , p_error_template      OUT NOCOPY CLOB)
       RETURN CLOB
    AS
     l_template   CLOB := p_template;
@@ -651,24 +650,24 @@ AS
 
       --Parse <% %> tags
       --parse (l_template);
-      
+
       --Get Includes
-      get_includes(l_template, p_vars);      
-      
+      get_includes(l_template, p_vars);
+
       --Interpret the template
       interpret(l_template, p_vars);
-      
+
       --Code blocks directive
       l_template  :=
          REGEXP_REPLACE (l_template
-                       , '<%([^%>].*?)%>'                       
+                       , '<%([^%>].*?)%>'
                        , ']''); \1 tePLSQL.p(q''['
                        , 1
                        , 0
                        , 'n');
-       
+
       --DBMS_OUTPUT.put_line (l_template);
-      
+
       --Execute the template
       $if dbms_db_version.ver_le_10 $then
           --10g
@@ -696,78 +695,67 @@ AS
                            , FALSE
                            , DBMS_SQL.native);
              -- execute
-             v_ret       := DBMS_SQL.execute (v_cur);
-          EXCEPTION
-             WHEN OTHERS
-             THEN
-                --Trim buffer 
-                l_length := DBMS_LOB.getlength (g_buffer);
-                IF l_length > 500
-                THEN
-                    l_length := 500;
-                END IF;
-                g_buffer := DBMS_LOB.SUBSTR (g_buffer, l_length, DBMS_LOB.getlength (g_buffer) - (l_length - 1));
-                
-                --Print error
-                PRINT ('### tePLSQL Render Error ###');
-                PRINT (CHR (10));
-                PRINT (SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
-                PRINT (CHR (10));
-                PRINT ('### Processed template ###');
-                PRINT (CHR (10));
-                PRINT (l_template);
+             v_ret       := DBMS_SQL.execute (v_cur);      
           END;
 
       $else
           -- 11g
-          BEGIN
-             EXECUTE IMMEDIATE l_template;
-          EXCEPTION
-             WHEN OTHERS
-             THEN
-                --Trim buffer 
-                l_length := DBMS_LOB.getlength (g_buffer);
-                IF l_length > 500
-                THEN
-                    l_length := 500;
-                END IF;
-                g_buffer := DBMS_LOB.SUBSTR (g_buffer, l_length, DBMS_LOB.getlength (g_buffer) - (l_length - 1));
-                
-                --Print error
-                PRINT ('### tePLSQL Render Error ###');
-                PRINT (CHR (10));
-                PRINT (SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
-                PRINT (CHR (10));
-                PRINT ('### Processed template ###');
-                PRINT (CHR (10));
-                PRINT (l_template);
-          END;
+          EXECUTE IMMEDIATE l_template;
       $end
 
       l_template  := g_buffer;
       g_buffer    := NULL;
 
       RETURN l_template;
+
    EXCEPTION
-      WHEN OTHERS
-      THEN
-         raise_application_error (-20001, SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
+     WHEN OTHERS
+     THEN
+        --Trim buffer
+        l_length := DBMS_LOB.getlength (g_buffer);
+        IF l_length > 500
+        THEN
+            l_length := 500;
+        END IF;
+        g_buffer := DBMS_LOB.SUBSTR (g_buffer, l_length, DBMS_LOB.getlength (g_buffer) - (l_length - 1));
+
+        --Print error
+        PRINT ('### tePLSQL Render Error ###');
+        PRINT (CHR (10));
+        PRINT (SQLERRM || ' ' || DBMS_UTILITY.format_error_backtrace ());
+        PRINT (CHR (10));
+        PRINT ('### Processed template ###');
+        PRINT (CHR (10));
+        PRINT (l_template);
+
+        p_error_template := g_buffer;
+        RAISE;         
+   END render;
+
+   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array, p_template IN CLOB)
+      RETURN CLOB
+   AS
+      l_error_template      CLOB;
+      l_rendered_template   CLOB;
+   BEGIN
+      l_rendered_template := render (p_vars, p_template, l_error_template);
+      RETURN l_rendered_template;
    END render;
 
 
    FUNCTION process (p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
-                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'                                      
+                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB
    AS
-      l_result       CLOB;      
+      l_result       CLOB;
       l_template     CLOB;
    BEGIN
       --Get template
       l_template := include(p_template_name,p_object_name,p_object_type,p_schema);
-    
+
       IF LENGTH (l_template) = 0
       THEN
          IF p_template_name IS NOT NULL

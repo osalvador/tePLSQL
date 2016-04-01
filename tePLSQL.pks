@@ -1,4 +1,5 @@
-CREATE OR REPLACE PACKAGE teplsql AUTHID CURRENT_USER
+CREATE OR REPLACE PACKAGE teplsql
+   AUTHID CURRENT_USER
 AS
    --Define Associative Array
    TYPE t_assoc_array
@@ -11,10 +12,10 @@ AS
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE
    *
-   * @param  p_clob     the CLOB to print to the DBMS_OUTPUT 
-   */   
-   PROCEDURE output_clob(p_clob in CLOB);
-   
+   * @param  p_clob     the CLOB to print to the DBMS_OUTPUT
+   */
+   PROCEDURE output_clob (p_clob IN CLOB);
+
    /**
    * Prints received data into the buffer
    *
@@ -35,11 +36,24 @@ AS
    /**
    * Renders the template received as parameter.
    *
-   * @param  p_vars      the template's arguments.
-   * @param  p_template  the template's body.   
-   * @return             the processed template.
+   * @param  p_vars             the template's arguments.
+   * @param  p_template         the template's body.
+   * @param  p_error_template   if an error occurs, the template processed with the error description
+   * @return                    the processed template.
    */
-   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array, p_template IN CLOB)
+   FUNCTION render (p_vars             IN            t_assoc_array DEFAULT null_assoc_array
+                  , p_template         IN            CLOB
+                  , p_error_template      OUT NOCOPY CLOB)
+      RETURN CLOB;
+
+   /**
+   * Renders the template received as parameter. Overloaded function for backward compatibility.
+   *
+   * @param  p_vars             the template's arguments.
+   * @param  p_template         the template's body.
+   * @return                    the processed template.
+   */
+   FUNCTION render (p_vars IN t_assoc_array DEFAULT null_assoc_array , p_template IN CLOB)
       RETURN CLOB;
 
    /**
@@ -56,7 +70,7 @@ AS
    */
    FUNCTION process (p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
-                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'                                      
+                   , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;
