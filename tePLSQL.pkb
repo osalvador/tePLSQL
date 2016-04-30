@@ -695,6 +695,10 @@ AS
 
           IF LENGTH (l_str_tmp) > 0
           THEN
+
+             --Bind the variables into include() parameters
+             bind_vars (l_str_tmp, p_vars);
+
              -- translate the string
              l_inc := decode_include_parameters( l_str_tmp);
  
