@@ -15,56 +15,57 @@ AS
    g_buffer         CLOB;
    
    /**
-     Decodes the properties of the "<%@ include() %>" directive.
-     
-     @param   p_str         Input string found between parentheses of an "<%@ include() %>" directive
-     @return                A record type containing the individual components
+   * Decodes the properties of the "<%@ include() %>" directive.
+   * 
+   * @param   p_str         Input string found between parentheses of an "<%@ include() %>" directive
+   * @return                A record type containing the individual components
    */
-   FUNCTION decode_include_parameters( p_str in varchar2 ) return t_include_parameters
+   FUNCTION decode_include_parameters (p_str IN VARCHAR2)
+      RETURN t_include_parameters
    IS
-     TYPE array_t IS TABLE OF TE_TEMPLATES.NAME%TYPE;
+      TYPE array_t IS TABLE OF te_templates.name%TYPE;
 
-     l_string_tt  array_t;
-     l_ret        t_include_parameters := null_include_parameters;
- 
+      l_string_tt   array_t;
+      l_ret         t_include_parameters := null_include_parameters;
    BEGIN
-          IF LENGTH (p_str) > 0
-          THEN
-                 SELECT   REGEXP_REPLACE (REGEXP_SUBSTR (p_str
-                                                       , '[^,]+'
-                                                       , 1
-                                                       , LEVEL), '\s', '')
-                             text
-                   BULK   COLLECT
-                   INTO   l_string_tt
-                   FROM   DUAL
-             CONNECT BY   REGEXP_SUBSTR (p_str
-                                       , '[^,]+'
-                                       , 1
-                                       , LEVEL) IS NOT NULL;
+      IF LENGTH (p_str) > 0
+      THEN
+             SELECT   REGEXP_REPLACE (REGEXP_SUBSTR (p_str
+                                                   , '[^,]+'
+                                                   , 1
+                                                   , LEVEL), '\s', '')
+                         text
+               BULK   COLLECT
+               INTO   l_string_tt
+               FROM   DUAL
+         CONNECT BY   REGEXP_SUBSTR (p_str
+                                   , '[^,]+'
+                                   , 1
+                                   , LEVEL) IS NOT NULL;
 
-             --populate variables
-             IF l_string_tt.EXISTS (1)
-             THEN
-                l_ret.template_name := l_string_tt (1);
-             END IF;
+         --populate variables
+         IF l_string_tt.EXISTS (1)
+         THEN
+            l_ret.template_name := l_string_tt (1);
+         END IF;
 
-             IF l_string_tt.EXISTS (2)
-             THEN
-                l_ret.object_name := l_string_tt (2);
-             END IF;
+         IF l_string_tt.EXISTS (2)
+         THEN
+            l_ret.object_name := l_string_tt (2);
+         END IF;
 
-             IF l_string_tt.EXISTS (3)
-             THEN
-                l_ret.object_type := l_string_tt (3);
-             END IF;
+         IF l_string_tt.EXISTS (3)
+         THEN
+            l_ret.object_type := l_string_tt (3);
+         END IF;
 
-             IF l_string_tt.EXISTS (4)
-             THEN
-                l_ret.schema    := l_string_tt (4);
-             END IF;
-     END IF;
-     return l_ret;
+         IF l_string_tt.EXISTS (4)
+         THEN
+            l_ret.schema := l_string_tt (4);
+         END IF;
+      END IF;
+
+      RETURN l_ret;
    END decode_include_parameters;
 
    PROCEDURE output_clob (p_clob IN CLOB)
@@ -126,147 +127,150 @@ AS
    END set_template_directive;
 
    /**
-     Retrieves template from TE_TEMPLATES that was defined by the input.
-     
-     @param   p_inc        Properties used to define which code to extract
-     @return               Returns the code representing the requested template name or EMBPTY_CLO() if not found.
+   * Retrieves template from TE_TEMPLATES that was defined by the input.
+   *  
+   * @param   p_inc        Properties used to define which code to extract
+   * @return               Returns the code representing the requested template name or EMBPTY_CLO() if not found.
    */
-   FUNCTION get_code_by_table( p_inc t_include_parameters ) return CLOB
+   FUNCTION get_template_by_table (p_inc t_include_parameters)
+      RETURN CLOB
    AS
-     l_template CLOB;
+      l_template   CLOB;
    BEGIN
-        SELECT   template
-          INTO   l_template
-          FROM   te_templates
-         WHERE   UPPER(name) = UPPER (p_inc.template_name);
-         
-         return l_template;
+      SELECT   template
+        INTO   l_template
+        FROM   te_templates
+       WHERE   UPPER (name) = UPPER (p_inc.template_name);
+
+      RETURN l_template;
    EXCEPTION
-   WHEN NO_DATA_FOUND THEN
-      l_template := EMPTY_CLOB();
-   END get_code_by_table;
+      WHEN NO_DATA_FOUND
+      THEN
+         l_template  := EMPTY_CLOB ();
+   END get_template_by_table;
    
    /**
-     Retrieves code from DB Object defined by the input.
-     
-     @param   p_inc         Properties used to define which code to extract
-     @return                Returns the code reperesnting the requested template
+   * Retrieves code from DB Object defined by the input.
+   * 
+   * @param   p_inc         Properties used to define which code to extract
+   * @return                Returns the code reperesnting the requested template
    */
-   FUNCTION get_code_by_obj( p_inc t_include_parameters ) return CLOB
+   FUNCTION get_template_by_obj (p_inc t_include_parameters)
+      RETURN CLOB
    IS
-       l_result       CLOB;
-       l_object_ddl   CLOB;
-       l_template     CLOB;
-       l_tmp          CLOB;
-       i              PLS_INTEGER := 1;
-       l_found        PLS_INTEGER := 0;
+      l_result       CLOB;
+      l_object_ddl   CLOB;
+      l_template     CLOB;
+      l_tmp          CLOB;
+      i              PLS_INTEGER := 1;
+      l_found        PLS_INTEGER := 0;
    BEGIN
-          --Search the template in other Oracle Object
+      --Search the template in other Oracle Object
 
-          --Get package source DDL
-          l_object_ddl :=
-             DBMS_METADATA.get_ddl (NVL (UPPER (p_inc.object_type), 'PACKAGE'), UPPER (p_inc.object_name), UPPER (p_inc.schema));
+      --Get package source DDL
+      l_object_ddl :=
+         DBMS_METADATA.get_ddl (NVL (UPPER (p_inc.object_type), 'PACKAGE')
+                              , UPPER (p_inc.object_name)
+                              , UPPER (p_inc.schema));
 
-          --If p_template_name is null get all templates from the object
-          --else get only this template.
-          IF p_inc.template_name IS NOT NULL
-          THEN
-             LOOP
-                l_tmp       :=
-                   REGEXP_SUBSTR (l_object_ddl
-                                , '<%@ template([^%>].*?)%>'
-                                , 1
-                                , i
-                                , 'n');
+      --If p_template_name is null get all templates from the object
+      --else get only this template.
+      IF p_inc.template_name IS NOT NULL
+      THEN
+         LOOP
+            l_tmp       :=
+               REGEXP_SUBSTR (l_object_ddl
+                            , '<%@ template([^%>].*?)%>'
+                            , 1
+                            , i
+                            , 'n');
 
-                l_found     := INSTR (l_tmp, 'name=' || p_inc.template_name);
+            l_found     := INSTR (l_tmp, 'name=' || p_inc.template_name);
 
-                EXIT WHEN LENGTH (l_tmp) = 0 OR l_found <> 0;
-                i           := i + 1;
-             END LOOP;
-          ELSE
-             l_found     := 0;
-          END IF;
+            EXIT WHEN LENGTH (l_tmp) = 0 OR l_found <> 0;
+            i           := i + 1;
+         END LOOP;
+      ELSE
+         l_found     := 0;
+      END IF;
 
-          -- i has the occurrence of the substr where the template is
-          l_tmp       := NULL;
+      -- i has the occurrence of the substr where the template is
+      l_tmp       := NULL;
 
-          LOOP
-             --Get Template from the object
-             $IF DBMS_DB_VERSION.ver_le_10
-             $THEN
-                l_tmp       :=
-                   REGEXP_REPLACE (REGEXP_REPLACE (REGEXP_SUBSTR (l_object_ddl
-                                                                , '\$if[[:blank:]]+false[[:blank:]]+\$then' || CHR (10) || '([^\$end].*?)\$end'
-                                                                , 1
-                                                                , i
-                                                                , 'n')
-                                                 , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10)
-                                                 , ''
-                                                 , 1
-                                                 , 1)
-                                 , '\$end'
-                                 , ''
-                                 , 1
-                                 , INSTR ('$end', 1, -1));
-             $ELSE
-                l_tmp       :=
-                   REGEXP_SUBSTR (l_object_ddl
-                                , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10) || '([^\$end].*?)\$end'
-                                , 1
-                                , i
-                                , 'n'
-                                , 1);
-             $END
+      LOOP
+         --Get Template from the object
+         $IF DBMS_DB_VERSION.ver_le_10
+         $THEN
+            l_tmp       :=
+               REGEXP_REPLACE (REGEXP_REPLACE (REGEXP_SUBSTR (l_object_ddl
+                                                            ,    '\$if[[:blank:]]+false[[:blank:]]+\$then'
+                                                              || CHR (10)
+                                                              || '([^\$end].*?)\$end'
+                                                            , 1
+                                                            , i
+                                                            , 'n')
+                                             , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10)
+                                             , ''
+                                             , 1
+                                             , 1)
+                             , '\$end'
+                             , ''
+                             , 1
+                             , INSTR ('$end', 1, -1));
+         $ELSE
+            l_tmp       :=
+               REGEXP_SUBSTR (l_object_ddl
+                            , '\$if[[:blank:]]+false[[:blank:]]+\$then\s*' || CHR (10) || '([^\$end].*?)\$end'
+                            , 1
+                            , i
+                            , 'n'
+                            , 1);
+         $END
 
-             l_template  := l_template || l_tmp;
-             EXIT WHEN LENGTH (l_tmp) = 0 OR l_found <> 0;
-             i           := i + 1;
-          END LOOP;
+         l_template  := l_template || l_tmp;
+         EXIT WHEN LENGTH (l_tmp) = 0 OR l_found <> 0;
+         i           := i + 1;
+      END LOOP;
 
-          RETURN l_template;
-   END get_code_by_obj;
+      RETURN l_template;
+   END get_template_by_obj;
 
    /**
-     Retrieves the template based on the input.
-     This code is responsible for deciding where the template is stored.
-     
-     @param   p_inc         Properties used to define which code to extract
-     @return                Returns the code reperesnting the requested template
+   *  Retrieves the template based on the input.
+   *  This code is responsible for deciding where the template is stored.
+   *  
+   *  @param   p_inc         Properties used to define which code to extract
+   *  @return                Returns the code reperesnting the requested template
    */
-   FUNCTION get_code( p_inc t_include_parameters )  return CLOB
+   FUNCTION get_template (p_inc t_include_parameters)
+      RETURN CLOB
    IS
-     l_inc      t_include_parameters := null_include_parameters;
-     l_template CLOB;
+      l_inc        t_include_parameters := null_include_parameters;
+      l_template   CLOB;
    BEGIN
-       --Force Defaults
-        /*  original code
-        l_template_name := p_template_name;
-        l_object_name := NVL(p_object_name,'TE_TEMPLATES');
-        l_object_type := NVL(p_object_type,'PACKAGE');
-        l_schema := p_schema;*/
-       l_inc.template_name := p_inc.template_name;
-       l_inc.object_name   := NVL( p_inc.object_name,'TE_TEMPLATES');
-       l_inc.object_type   := NVL( p_inc.object_type,'PACKAGE');
-       l_inc.schema        := p_inc.schema;
+      --Force Defaults
+      l_inc.template_name := p_inc.template_name;
+      l_inc.object_name := NVL (p_inc.object_name, 'TE_TEMPLATES');
+      l_inc.object_type := NVL (p_inc.object_type, 'PACKAGE');
+      l_inc.schema := p_inc.schema;
 
-       -- Decision tree for deciding which method to use to retrieve the code
-       IF  l_inc.template_name IS NOT NULL
-       AND l_inc.object_name = 'TE_TEMPLATES'
-       THEN
-         l_template := get_code_by_table( l_inc );
-       ELSE
-         l_template := get_code_by_obj( l_inc );
-       END IF;
-       return l_template;
-    end get_code;
+      -- Decision tree for deciding which method to use to retrieve the code
+      IF l_inc.template_name IS NOT NULL AND l_inc.object_name = 'TE_TEMPLATES'
+      THEN
+         l_template  := get_template_by_table (l_inc);
+      ELSE
+         l_template  := get_template_by_obj (l_inc);
+      END IF;
+
+      RETURN l_template;
+   END get_template;
 
 
    /**
    * Receives the name of the object, usually a package,
    * which contains an embedded template and return the template.
    *
-   * This has been refactored with "get_code()"
+   * This has been refactored with "get_template()"
    *
    * @param  p_template_name    the name of the template
    * @param  p_object_name      the name of the object (usually the name of the package)
@@ -657,7 +661,7 @@ AS
        do
            find include directive
            extract parameters (decode_include_parameters)
-           get include (get_code)
+           get include (get_template)
            interpret template
            concatenate result template into p_template
        done
@@ -700,57 +704,10 @@ AS
              bind_vars (l_str_tmp, p_vars);
 
              -- translate the string
-             l_inc := decode_include_parameters( l_str_tmp);
+             l_inc := decode_include_parameters(l_str_tmp);
  
              --get included template
-             l_tmp       := get_code( l_inc );
-
-/******************************************************************************\
- *       This block of code was refactored into                               *
- *         decode_include_parameters() and get_code()                         *
- ******************************************************************************
- 
-                 SELECT   REGEXP_REPLACE (REGEXP_SUBSTR (l_str_tmp
-                                                       , '[^,]+'
-                                                       , 1
-                                                       , LEVEL), '\s', '')
-                             text
-                   BULK   COLLECT
-                   INTO   l_strig_tt
-                   FROM   DUAL
-             CONNECT BY   REGEXP_SUBSTR (l_str_tmp
-                                       , '[^,]+'
-                                       , 1
-                                       , LEVEL) IS NOT NULL;
-
-             --populate variables
-             IF l_strig_tt.EXISTS (1)
-             THEN
-                l_template_name := l_strig_tt (1);
-             END IF;
-
-             IF l_strig_tt.EXISTS (2)
-             THEN
-                l_object_name := l_strig_tt (2);
-             END IF;
-
-             IF l_strig_tt.EXISTS (3)
-             THEN
-                l_object_type := l_strig_tt (3);
-             END IF;
-
-             IF l_strig_tt.EXISTS (4)
-             THEN
-                l_schema    := l_strig_tt (4);
-             END IF;
-
-             --get included template
-             l_tmp       :=
-                include (l_template_name
-                       , l_object_name
-                       , l_object_type
-                       , l_schema);
-\******************************************************************************/
+             l_tmp       := get_template( l_inc );
 
              --Interpret the template
              interpret (l_tmp, p_vars);
@@ -817,10 +774,11 @@ AS
           END IF;
 
           l_number_includes := l_number_includes +1;
-          if l_number_includes >= G_MAX_INCLUDES
-          then
+          
+          IF l_number_includes >= G_MAX_INCLUDES
+          THEN
             raise_application_error (-20001, 'Too much include directive in the template, Recursive include?');
-          end if;
+          END IF;
 
        END LOOP;
     END get_includes;
@@ -966,7 +924,6 @@ AS
       RETURN l_rendered_template;
    END render;
 
-
    FUNCTION process (p_vars            IN t_assoc_array DEFAULT null_assoc_array
                    , p_template_name   IN VARCHAR2 DEFAULT NULL
                    , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
@@ -985,7 +942,7 @@ AS
       l_inc.object_type   := p_object_type;
       l_inc.schema        := p_schema;
       
-      l_template := get_code( l_inc );
+      l_template := get_template( l_inc );
 
       -- verify that we found a template
       IF LENGTH (l_template) = 0
