@@ -147,6 +147,7 @@ AS
       WHEN NO_DATA_FOUND
       THEN
          l_template  := EMPTY_CLOB ();
+         RETURN l_template;
    END get_template_by_table;
    
    /**
@@ -639,7 +640,7 @@ AS
        l_tmp             CLOB;
        l_result          CLOB;
 
-       l_str_tmp         VARCHAR2 (64);
+       l_str_tmp         VARCHAR2 (32767);
        
        l_inc t_include_parameters;
 
