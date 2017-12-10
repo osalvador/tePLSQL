@@ -32,6 +32,8 @@ For a quick look see [basic example](#basic-example). The best example of use te
 - [Examples of tePLSQL templates](#examples)
 - [Debugging tePLSQL templates](#debug)
 - [tePLSQL API reference](#apiReference)
+- [Advance Topics](#advance)
+    + [tePLSQL Engine's Options](#engineOptions)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -950,6 +952,40 @@ PROCEDURE output_clob(p_clob in CLOB);
 |----------|------------
 |p_clob | The CLOB to print to the DBMS_OUTPUT
 
+<a name="advance"></a>
+## Advance Topics
+
+<a name="engineOptions"></a>
+### tePLSQL Engine Options
+The way that the tePLSQL engine behaves can be modified by adding the options as additional [tePLSQL arguments](#arguments).
+
+The argument names are defined as constants within the tePLSQL package specification.
+
+|Constant |Valid Values |Default Value |Description
+|---------|-------------|--------------|-------------
+|g_set_max_includes | integers >0 | 50 | [sets the maximum number of `include`](#maxInclude)
+
+<a name="maxInclude"></a>
+#### g_set_max_includes
+In order to prevent potential infinite loops, tePLSQL will stop after processsing a set number of `include` commands.
+
+The default value is set to `50`.  This value can be addjust with the `g_set_max_includes` argument.
+
+```sql
+DECLARE
+  l_vars  teplsql.t_assoc_array := teplsql.null_assoc_array;
+BEGIN
+  -- normal template variables
+  l_vars('schema')  := USER;
+  l_vars('table_name') := 'MY_TABLE';
+
+  -- setting maximum number includes to 100
+  l_vars(teplsql.g_set_max_includes)  := 100;
+
+  l_result := teplsql.process(l_vars,'My TAPI Template');
+END;
+/
+```
 
 <a name="contributing"></a>
 ## Contributing
