@@ -67,6 +67,48 @@ AS
 
       RETURN l_ret;
    END decode_include_parameters;
+   
+   /**
+   * Process all parameters that adjust the tePLSQL engine
+   * 
+   * @param   p_vars         the template's arguments and engine properties.
+   */
+   PROCEDURE process_engine_parameters( p_vars IN t_assoc_array DEFAULT null_assoc_array)
+   IS
+      l_key   t_template_variable_name;
+      l_value t_template_variable_value;
+      
+      invalid_parameter_value EXCEPTION;
+   BEGIN
+      l_key := p_vars.first;
+      WHILE( l_key is not null )
+      LOOP
+         l_value := p_vars(l_key);
+
+         CASE l_key
+            WHEN g_set_max_includes THEN
+               -- test that the value is a number and the number is >= 1
+               IF NOT regexp_like( l_value, '^[[:digit:]]+$')
+               THEN
+                 raise invalid_parameter_value;
+               END IF;
+               
+               g_max_includes := to_number( l_value );
+
+               IF g_max_includes < 1 or g_max_includes IS NULL
+               THEN
+                  raise invalid_parameter_value;
+               END IF;
+            ELSE
+               NULL;
+         END CASE;
+         
+         l_key := p_vars.next( l_key );
+      END LOOP;
+   EXCEPTION
+      WHEN invalid_parameter_value THEN
+         raise_application_error( -20010, 'Parameter "' || l_key || '" has an invalid value of "' || l_value || '"');
+   END process_engine_parameters;
 
    PROCEDURE output_clob (p_clob IN CLOB)
    IS
@@ -830,6 +872,9 @@ AS
    BEGIN
       --Clear buffer
       g_buffer    := NULL;
+
+      --Set engine properties
+      process_engine_parameters(p_vars);
 
       --Parse <% %> tags
       --parse (l_template);
