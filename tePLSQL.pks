@@ -1,11 +1,20 @@
 CREATE OR REPLACE PACKAGE teplsql
    AUTHID CURRENT_USER
 AS
+   --Define data type for Template Variable names
+   SUBTYPE t_template_variable_name IS VARCHAR2 (255);
+   
+   --Define data type for Template Variable values
+   SUBTYPE t_template_variable_value IS VARCHAR2 (32767);
+   
    --Define Associative Array
    TYPE t_assoc_array
    IS
-      TABLE OF VARCHAR2 (32767)
-         INDEX BY VARCHAR2 (255);
+      TABLE OF t_template_variable_value
+         INDEX BY t_template_variable_name;
+
+   --Use this Template Variable Name to adjust the maximum number of includes (default=50)
+   g_set_max_includes   constant t_template_variable_name := 'tePLSQL.max_includes';
 
    null_assoc_array   t_assoc_array;
 
@@ -36,7 +45,7 @@ AS
    /**
    * Renders the template received as parameter.
    *
-   * @param  p_vars             the template's arguments.
+   * @param  p_vars             the template's arguments and engine properties.
    * @param  p_template         the template's body.
    * @param  p_error_template   if an error occurs, the template processed with the error description
    * @return                    the processed template.
@@ -49,7 +58,7 @@ AS
    /**
    * Renders the template received as parameter. Overloaded function for backward compatibility.
    *
-   * @param  p_vars             the template's arguments.
+   * @param  p_vars             the template's arguments and engine properties.
    * @param  p_template         the template's body.
    * @return                    the processed template.
    */
@@ -61,7 +70,7 @@ AS
    * which contains an embedded template.
    * The template is extracted and is rendered with `render` function
    *
-   * @param  p_vars             the template's arguments.
+   * @param  p_vars             the template's arguments and engine properties.
    * @param  p_template_name    the name of the template
    * @param  p_object_name      the name of the object (usually the name of the package)
    * @param  p_object_type      the type of the object (PACKAGE, PROCEDURE, FUNCTION...)
