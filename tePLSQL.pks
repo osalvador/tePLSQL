@@ -13,10 +13,18 @@ AS
       TABLE OF t_template_variable_value
          INDEX BY t_template_variable_name;
 
-   --Use this Template Variable Name to adjust the maximum number of includes (default=50)
-   g_set_max_includes   constant t_template_variable_name := 'tePLSQL.max_includes';
-
    null_assoc_array   t_assoc_array;
+
+   --Use these Template Variable Names to adjust the maximum number of includes (default=50)
+   g_set_max_includes        constant t_template_variable_name := 'tePLSQL.max_includes';
+   g_set_globbing_mode       constant t_template_variable_name := 'tePLSQL.globbing.mode';
+   g_set_globbing_separator  constant t_template_variable_name := 'tePLSQL.globbing.separator';
+
+   -- Valid values for globbing mode
+   g_globbing_mode_off      constant t_template_variable_value := 'off';
+   g_globbing_mode_on       constant t_template_variable_value := 'on';
+   g_globbing_mode_regexp   constant t_template_variable_value := 'regexp';
+   g_globbing_mode_like     constant t_template_variable_value := 'like';
 
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE

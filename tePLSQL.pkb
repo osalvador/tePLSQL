@@ -8,11 +8,31 @@ AS
                                   
    null_include_parameters t_include_parameters;
    
+   -- various system default values
+   g_max_includes_default        constant int := 50;
+   g_globbing_mode_default       constant t_template_variable_value := g_globbing_mode_off;
+   g_globbing_separator_default  constant t_template_variable_value := chr(10);
+   
    -- various system options
-   g_max_includes   int := 50;
+   g_max_includes        int := g_max_includes_default;
+   g_globbing_mode       t_template_variable_value := g_globbing_mode_default;
+   g_globbing_separator  t_template_variable_value := g_globbing_separator_default;
 
    -- run time global variables
    g_buffer         CLOB;
+   
+   /**
+   * Resets all of the system options to default values
+   *
+   * @param   p_vars       This is the Associative Array that contains system options
+   */
+   procedure reset_system_defaults
+   as
+   begin
+      g_max_includes        := g_max_includes_default;
+      g_globbing_mode       := g_globbing_mode_default;
+      g_globbing_separator  := g_globbing_separator_default;
+   end reset_system_defaults;
    
    /**
    * Decodes the properties of the "<%@ include() %>" directive.
@@ -99,6 +119,16 @@ AS
                THEN
                   raise invalid_parameter_value;
                END IF;
+            WHEN g_set_globbing_separator THEN
+               g_globbing_separator := l_value;
+            WHEN g_set_globbing_mode THEN
+               -- assert the value is valid
+               IF l_value not in (g_globbing_mode_off, g_globbing_mode_on, g_globbing_mode_regexp,g_globbing_mode_like)
+               THEN
+                  raise invalid_parameter_value;
+               END IF;
+               
+               g_globbing_mode := l_value;
             ELSE
                NULL;
          END CASE;
@@ -178,12 +208,74 @@ AS
       RETURN CLOB
    AS
       l_template   CLOB;
+      l_regexp     varchar2(32767);
    BEGIN
-      SELECT   template
-        INTO   l_template
-        FROM   te_templates
-       WHERE   UPPER (name) = UPPER (p_inc.template_name);
-
+      CASE g_globbing_mode
+         WHEN g_globbing_mode_off THEN
+            SELECT   t.template
+              INTO   l_template
+            FROM   te_templates t
+            WHERE   UPPER (t.name) = UPPER (p_inc.template_name);
+         WHEN g_globbing_mode_like THEN
+            FOR curr IN (
+               SELECT   t.template
+                 INTO   l_template
+               FROM   te_templates t
+               WHERE   UPPER (t.name) like UPPER (p_inc.template_name)
+               ORDER BY t.name
+              )
+           LOOP
+              IF l_template IS NULL
+              THEN
+                 l_template := curr.template;
+              ELSE
+                 l_template  := l_template || g_globbing_separator || curr.template;
+              END IF;
+           END LOOP;
+         WHEN g_globbing_mode_regexp THEN
+            FOR curr IN (
+               SELECT   t.template
+                 INTO   l_template
+               FROM   te_templates t
+               WHERE   regexp_like(t.name, p_inc.template_name)
+               ORDER BY t.name
+              )
+           LOOP
+              IF l_template IS NULL
+              THEN
+                 l_template := curr.template;
+              ELSE
+                 l_template  := l_template || g_globbing_separator || curr.template;
+              END IF;
+           END LOOP;
+         WHEN g_globbing_mode_on THEN
+            l_regexp := regexp_replace( p_inc.template_name, '([.(){}\])', '\\\1');
+            l_regexp := '^' || regexp_replace( l_regexp, '\*', '[^.]+' ) || '$';
+            
+            FOR curr IN (
+               SELECT   t.template
+                 INTO   l_template
+               FROM   te_templates t
+               WHERE   regexp_like(t.name, l_regexp)
+               ORDER BY t.name
+              )
+           LOOP
+              IF l_template IS NULL
+              THEN
+                 l_template := curr.template;
+              ELSE
+                 l_template  := l_template || g_globbing_separator || curr.template;
+              END IF;
+           END LOOP;
+         ELSE
+           raise no_data_found;
+      END CASE;
+      
+      IF l_template IS NULL
+      THEN
+        raise no_data_found;
+      END IF;
+      
       RETURN l_template;
    EXCEPTION
       WHEN NO_DATA_FOUND
@@ -874,6 +966,7 @@ AS
       g_buffer    := NULL;
 
       --Set engine properties
+      reset_system_defaults;
       process_engine_parameters(p_vars);
 
       --Parse <% %> tags
