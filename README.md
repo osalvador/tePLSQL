@@ -34,6 +34,7 @@ For a quick look see [basic example](#basic-example). The best example of use te
 - [tePLSQL API reference](#apiReference)
 - [Advance Topics](#advance)
     + [tePLSQL Engine's Options](#engineOptions)
+    + [Template Globbing](#templateGlobbing)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -958,12 +959,16 @@ PROCEDURE output_clob(p_clob in CLOB);
 <a name="engineOptions"></a>
 ### tePLSQL Engine Options
 The way that the tePLSQL engine behaves can be modified by adding the options as additional [tePLSQL arguments](#arguments).
+The settings are reset to DEFAULT values, prior to parsing Template Variables, for each run.
 
 The argument names are defined as constants within the tePLSQL package specification.
 
 |Constant |Valid Values |Default Value |Description
 |---------|-------------|--------------|-------------
 |g_set_max_includes | integers >0 | 50 | [sets the maximum number of `include`](#maxInclude)
+|g_set_globbing_mode | constants `g_globbing_mode_*` | off | sets the search mode for [Template Globbing](#templateGlobbing).
+|g_set_globbing_separator | any valid string | `chr(10)` | The string used between globbed templates.  More information is [here](#templateSeparator)
+
 
 <a name="maxInclude"></a>
 #### g_set_max_includes
@@ -985,6 +990,73 @@ BEGIN
   l_result := teplsql.process(l_vars,'My TAPI Template');
 END;
 /
+```
+
+<a name="templateGlobbing"></a>
+### Template Globbing
+Template Globbing allows a developer to include multiple templates with a single `include` call.  By default, this feature is `off`.
+
+When used, the templates that match the search string are returned in case-sensitive order separated by a predetermined string.
+
+Example template for generating the Package Specification
+```sql
+create or replace
+package <%@ include( com.mycompany.templates.tapi.main_pkg.name ) %>
+as
+  <%@ include( com.mycompany.templates.tapi.main_pkg.documentation ) %>
+  
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.*.specification ) %>
+end <%@ include( com.mycompany.templates.tapi.main_pkg.name ) %>;
+<%= '/' %>
+```
+
+Template Globbing will expand as if the template was defined like this.
+```sql
+create or replace
+package <%@ include( com.mycompany.templates.tapi.main_pkg.name ) %>
+as
+  <%@ include( com.mycompany.templates.tapi.main_pkg.documentation ) %>
+  
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.01_ins.specification ) %>
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.02_upd.specification ) %>
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.03_del.specification ) %>
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.04_sel.specification ) %>
+  <%@ include( com.mycompany.templates.tapi.main_pkg.functions.05_hash.specification ) %>
+end <%@ include( com.mycompany.templates.tapi.main_pkg.name ) %>;
+<%= '/' %>
+```
+
+If other similarly named templates are created, they will be automatically included the next time the Package Specification template is used.
+
+#### Engine Options
+##### Enabling Template Globbing
+The constant `teplsql.g_set_globbing_mode` defines the name of the Template Variable the determines the Template Globbing mode.
+
+| constant | description |
+|----------|-------------|
+| `teplsql.g_globbing_mode_off` | Template Globbing mode is disabled (default) |
+| `teplsql.g_globbing_mode_on` | Template Globbing mode is on.  Search is case-sensitive.  The star ( `*` ) is the only supported wildcard.  Wildcard expansion will not expand across dots( `.` ). |
+| `teplsql.g_globbing_mode_regexp` | Template Globbing mode is on.  The template name within in the `include` clause is used as-is for a case-sensitive Regular Expression search. |
+| `teplsql.g_globbing_mode_like` | Template Globbing mode is on.  The template name within the `include` clause is used as-is for a case-insensitve LIKE search. |
+
+Before each call to `process` or `render`, you need to set the required Template Variable.
+```sql
+  -- Turn on Template Globbing
+  p_vars( teplsql.g_set_globbing_mode ) := teplsql.g_globbing_mode_on;
+  -- Default value for templates that use globbing can be too small
+  p_vars( teplsql.g_set_maximum_includes ) := 150;
+```
+
+<a name="templateSeparator"></a>
+##### Separation String
+The concatination string used between included templates can be set with the Template Variable name defined by `teplsql.g_set_globing_separator`.
+
+By default, this string is `chr(10)`.
+
+Example
+```sql
+  -- all globbed templates are separated by a single 80 column block comment line.
+  p_vars( teplsql.g_set_globbing_separator ) := chr(10) || '/' || lpad('*',78,'*') || '/' || chr(10);
 ```
 
 <a name="contributing"></a>
