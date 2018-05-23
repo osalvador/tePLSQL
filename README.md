@@ -51,17 +51,17 @@ To develop and deploy tePLSQL templates, you must meet these prerequisites:
 Download and compile `TE_TEMPLATES.sql`,`TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary.
 
 <a name="compatibility"></a>
-###Compatibility
+### Compatibility
 tePLSQL use regular expressions to process templates. Regular expressions were added in Oracle version 10 therefore teplsql works in Oracle Database 10g, 11g and 12c (all editions including XE).
 
 <a name="developing"></a>
-##Developing tePLSQL templates
+## Developing tePLSQL templates
 The order and placement of the tePLSQL directives and declarations is usually not significant. It becomes significant only when another template is included. For ease of maintenance, we recommends that you put the directives and declarations near the beginning of the template.
 
 The next table lists the tePLSQL elements and directs you to the section that explains how to use them. 
 
 <a name="teElements"></a>
-###tePLSQL elements
+### tePLSQL elements
 
 |Element | Name | Description | Section
 |--------|------|------------- | ----
@@ -77,7 +77,7 @@ The next table lists the tePLSQL elements and directs you to the section that ex
 
 
 <a name="characteristics"></a>
-###Specifying tePLSQL template characteristics
+### Specifying tePLSQL template characteristics
 Use the `<%@ template ... %>` directive to specify characteristics of the template:
 
 - What is the name of the template, mandatory.
@@ -105,7 +105,7 @@ Processing template example_template with version 0.1
 ```
 
 <a name="arguments"></a>
-###tePLSQL arguments
+### tePLSQL arguments
 The arguments variable are defined in Oracle PL/SQL associative array that receives as parameter by the render. Within the templates reference to ahce variables via `${varName}`.
 
 #### Syntax
@@ -137,7 +137,7 @@ Hi Oscar Salvador Magallanes
 ```
 
 <a name="naming"></a>
-###Naming the tePLSQL templates
+### Naming the tePLSQL templates
 In order to access and store templates correctly you must specify the template name in the `<%@ template ... %>` directive.
 
 To specify a template name, use this directive, where tmpl is the name for the template:
@@ -147,7 +147,7 @@ To specify a template name, use this directive, where tmpl is the name for the t
 It is the name of the template, not the name of the object that you store the template. 
 
 <a name="include"></a>
-###Including the contents of other template
+### Including the contents of other template
 You can set up an include including other tePLSQL templates in the current template. Insert this directive at the point where the content of the other template is to appear, replacing template_name with the name of the template to be included. 
 
 Any variables available in the current template are also available within the included template. However, all variables and functions defined in the included template have the local scope.
@@ -204,7 +204,7 @@ This is the same example, but the footer template is saved in package spec.
     <%@ include(footer , tmpl_tab_api) %>
 
 <a name="declare"></a>
-###Declaring global variables in a tePLSQL template
+### Declaring global variables in a tePLSQL template
 
 You can use the `<%! ... %>` directive to define a set of tePLSQL variables that are visible throughout the template, not just within the next BEGIN/END block. This element typically spans multiple lines, with individual PL/SQL variable declarations ended by semicolons. 
 
@@ -233,7 +233,7 @@ The usual PL/SQL syntax is allowed within the block. The delimiters server as sh
 ```
 
 <a name="executable"></a>
-###Specifying executable statements in a tePLSQL template
+### Specifying executable statements in a tePLSQL template
 You can use the `<% ... %>` code block directive to run a set of PL/SQL statements when the template is run. 
 
 This element typically spans multiple lines, with individual PL/SQL statements ended by semicolons. The statements can include complete blocks. 
@@ -269,7 +269,7 @@ All the usual PL/SQL syntax is allowed within the block.
 ```
 
 <a name="expression"></a>
-###Substituting expression values in a tePLSQL template
+### Substituting expression values in a tePLSQL template
 An expression directive outputs a single PL/SQL expression, such as a string, arithmetic expression, function call, or combination of these things. The result is substituted as a string at that spot in the output that is produced by the template. The expression result must be a string value or be able to be cast to a string. For any types that cannot be implicitly cast, such as DATE, pass the value to the PL/SQL `TO_CHAR` function.
 
 #### Syntax
@@ -292,7 +292,7 @@ You can use concatenation by using the twin pipe symbol (||) as in PL/SQL. This 
 
 
 <a name="escape"></a>
-###Escaping reserved words in a tePLSQL template
+### Escaping reserved words in a tePLSQL template
 tePLSQL has three reserved words: 
 
   - `q'[]'`
@@ -327,7 +327,7 @@ Scaping reserved words:
 ```
 
 <a name="lineBreak"></a>
-###Print line break to the output
+### Print line break to the output
 The control of the white-space in a template is a problem that to some extent haunts every template engine in the business.
 
 tePLSQL use white-space stripping. It automatically ignores (i.e. does not print to the output) superfluous white-spaces. The indentation white-space, and trailing white-space at the end of the line (includes the line break) will be ignored in lines that contains only tePLSQL tags (e.g. `<%if ... %>`, `<%! ... %>`), apart from the ignored white-space itself. 
@@ -371,7 +371,7 @@ Value: 10
 ```
 
 <a name="noLineBreak"></a>
-###Remove line break from the output
+### Remove line break from the output
 By the same way you can indicate in the template that a line break is not printed on the output. 
 
 #### Syntax
@@ -414,10 +414,10 @@ Values:1,2,3,4,5,6,7,8,9,10,
 ```
 
 <a name="load"></a>
-##Loading and storing tePLSQL templates into the Database
+## Loading and storing tePLSQL templates into the Database
 You can store tePLSQL templates in the database in two ways: In the relational table `TE_TEMPLATES` or in any Oracle Object.
 
-###TE_TEMPLATES table
+### TE_TEMPLATES table
 `TE_TEMPLATES` table Is the default way of storing a tePLSQL templates. The table has a `TEMPLATE` column defined as CLOB where the template is loaded. 
 
 #### Syntax
@@ -465,13 +465,13 @@ Processing template adding with version 0.1
 The variable x has the value: 2
 ```
 
-###Oracle Objects
+### Oracle Objects
 
 tePLSQL templates can be stored inside PL/SQL program unit spec or bodies.
 
 In order to place a template into a program unit you have to create a non-compiled section in the latter with the aid of PL/SQL conditional compilation directives:
 
-####Syntax
+#### Syntax
 ```
 $if false $then
 ... template ...
@@ -480,7 +480,7 @@ $end
 
 The syntax is case-sensitive but space-insensitive. Line breaks are not allowed. 
 
-####Example
+#### Example
 
 ```plsql
 CREATE OR REPLACE PACKAGE test_tmpl
@@ -506,7 +506,7 @@ Outout:
 The variable x has the value: 2
 ```
 
-####Anonymous  templates
+#### Anonymous  templates
 An anonymous template must be the only template in its host object. The template resides in a non-compiled section and occupies it entirely. An example of an anonymous template placed in the `test_tmpl` package specification:
 
 ```plsql
@@ -557,7 +557,7 @@ Output:
 Value X: 2Value Y: 5 
 ```
 
-####Named
+#### Named
 In order to store several templates in a single object correctly you must
 specify template characteristics, giving the name of the template.
 
@@ -601,7 +601,7 @@ Output:
     The variable y has the value: 0
 
 <a name="examples"></a>
-##Examples of tePLSQL templates
+## Examples of tePLSQL templates
 
 ### Basic Example
 
@@ -806,10 +806,10 @@ Output:
         The result of the operation 5 * 7 is 35
 
 <a name="debug"></a>
-##Debugging tePLSQL templates
+## Debugging tePLSQL templates
 As you begin experimenting with tePLSQL templates, and as you adapt your first simple templates into more elaborate ones, keep these guidelines in mind when you encounter problems. 
 
-###Find where the template fails
+### Find where the template fails
 tePLSQL interprets the template and converts it into executable PL/SQL code. When error is occurred you will see the description in the `DBMS_OUTPUT`:
 
 Rendering this template: 
@@ -837,7 +837,7 @@ You can see `ORA-01476: divisor is equal to zero ORA-06512: at line 2` means tha
 
 The exception message will be append into the tePLSQL buffer. This helps you to find where the exception is occurred. tePLSQL trunc the buffer at maximum 500 characters to prevent the exception message is truncated in long templates.
 
-####Syntax error
+#### Syntax error
 Rendering this template:
 ```
 Testing syntax Error. 
@@ -864,7 +864,7 @@ DECLARE  BEGIN tePLSQL.p(q'[Testing syntax Error.
 You will see at line 2 column 82, this instruction `tePLSQL.p( 10/1; )` that is not valid in PL/SQL. 
 
 <a name="apiReference"></a>
-##tePLSQL API reference
+## tePLSQL API reference
 
 ### RENDER
 
