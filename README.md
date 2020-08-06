@@ -48,7 +48,8 @@ To develop and deploy tePLSQL templates, you must meet these prerequisites:
 
 <a name="install"></a>
 ### Install
-Download and compile `TE_TEMPLATES.sql`,`TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary.
+Download and compile `TE_TEMPLATES.sql`,`TEPLSQL.pks` and `TEPLSQL.pkb`. No schema grants are necesary. 
+Or just install by calling install.sql via sqlplus or sqlcl.
 
 <a name="compatibility"></a>
 ### Compatibility
