@@ -3,10 +3,10 @@ create or replace PACKAGE teplsql
 AS
    --Define data type for Template Variable names
    SUBTYPE t_template_variable_name IS VARCHAR2 (255); 
-   
+
    --Define data type for Template Variable values
    SUBTYPE t_template_variable_value IS VARCHAR2 (32767);
-   
+
    --Define Associative Array
    TYPE t_assoc_array
    IS
@@ -19,12 +19,16 @@ AS
    g_set_max_includes        constant t_template_variable_name := 'tePLSQL.max_includes';
    g_set_globbing_mode       constant t_template_variable_name := 'tePLSQL.globbing.mode';
    g_set_globbing_separator  constant t_template_variable_name := 'tePLSQL.globbing.separator';
+   g_set_render_mode         constant t_template_variable_name := 'tePLSQL.render.mode';
 
    -- Valid values for globbing mode
    g_globbing_mode_off      constant t_template_variable_value := 'off';
    g_globbing_mode_on       constant t_template_variable_value := 'on';
    g_globbing_mode_regexp   constant t_template_variable_value := 'regexp';
    g_globbing_mode_like     constant t_template_variable_value := 'like';
+   g_render_mode_parent_tags_only  constant t_template_variable_value := 'parents';
+   g_render_mode_fetch_only constant t_template_variable_value := 'fetch';
+   g_render_mode_normal     constant t_template_variable_value := 'all';
 
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE

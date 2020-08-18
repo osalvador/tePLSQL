@@ -5,22 +5,27 @@ AS
                                       , object_name   varchar2(64)
                                       , object_type   varchar2(64)
                                       , schema        varchar2(64) );
-                                  
+
    null_include_parameters t_include_parameters;
-   
+
    -- various system default values
    g_max_includes_default        constant int := 50;
    g_globbing_mode_default       constant t_template_variable_value := g_globbing_mode_off;
    g_globbing_separator_default  constant t_template_variable_value := chr(10);
-   
+   g_render_mode_default         constant t_template_variable_value := g_render_mode_normal;
+
    -- various system options
    g_max_includes        int := g_max_includes_default;
    g_globbing_mode       t_template_variable_value := g_globbing_mode_default;
    g_globbing_separator  t_template_variable_value := g_globbing_separator_default;
+   g_render_mode         t_template_variable_value := g_render_mode_default;
 
    -- run time global variables
    g_buffer         CLOB;
    
+   only_parent_tags_complete exception;
+   only_fetch_complete       exception;
+
    /**
    * Resets all of the system options to default values
    *
@@ -32,8 +37,9 @@ AS
       g_max_includes        := g_max_includes_default;
       g_globbing_mode       := g_globbing_mode_default;
       g_globbing_separator  := g_globbing_separator_default;
+      g_render_mode         := g_render_mode_default;
    end reset_system_defaults;
-   
+
    /**
    * Decodes the properties of the "<%@ include() %>" directive.
    * 
@@ -87,7 +93,7 @@ AS
 
       RETURN l_ret;
    END decode_include_parameters;
-   
+
    /**
    * Process all parameters that adjust the tePLSQL engine
    * 
@@ -97,7 +103,7 @@ AS
    IS
       l_key   t_template_variable_name;
       l_value t_template_variable_value;
-      
+
       invalid_parameter_value EXCEPTION;
    BEGIN
       l_key := p_vars.first;
@@ -112,7 +118,7 @@ AS
                THEN
                  raise invalid_parameter_value;
                END IF;
-               
+
                g_max_includes := to_number( l_value );
 
                IF g_max_includes < 1 or g_max_includes IS NULL
@@ -127,12 +133,19 @@ AS
                THEN
                   raise invalid_parameter_value;
                END IF;
-               
+
                g_globbing_mode := l_value;
+             WHEN g_set_render_mode THEN
+                IF l_value in ( g_render_mode_parent_tags_only, g_render_mode_fetch_only )
+                THEN
+                    g_render_mode := l_value;
+                ELSE
+                    g_render_mode := g_render_mode_default;
+                end if;
             ELSE
                NULL;
          END CASE;
-         
+
          l_key := p_vars.next( l_key );
       END LOOP;
    EXCEPTION
@@ -251,7 +264,7 @@ AS
          WHEN g_globbing_mode_on THEN
             l_regexp := regexp_replace( p_inc.template_name, '([.(){}\])', '\\\1');
             l_regexp := '^' || regexp_replace( l_regexp, '\*', '[^.]+' ) || '$';
-            
+
             FOR curr IN (
                SELECT   t.template
                  INTO   l_template
@@ -270,12 +283,12 @@ AS
          ELSE
            raise no_data_found;
       END CASE;
-      
+
       IF l_template IS NULL
       THEN
         raise no_data_found;
       END IF;
-      
+
       RETURN l_template;
    EXCEPTION
       WHEN NO_DATA_FOUND
@@ -283,7 +296,7 @@ AS
          l_template  := EMPTY_CLOB ();
          RETURN l_template;
    END get_template_by_table;
-   
+
    /**
    * Retrieves code from DB Object defined by the input.
    * 
@@ -531,17 +544,61 @@ AS
    PROCEDURE bind_vars (p_template IN OUT NOCOPY CLOB, p_vars IN t_assoc_array)
    AS
       l_key   VARCHAR2 (256);
+      l_pkey  VARCHAR2 (256);
+      l_value te_templates.name%type;
+      l_render_all_tags boolean := true;
+      
+      procedure replace_vars( i_key in varchar2, i_value in varchar2 )
+      as
+      begin
+        p_template := REPLACE (p_template, '${' || i_key || '}', TO_CLOB ( i_value ));
+      end;
    BEGIN
+      if g_render_mode = g_render_mode_fetch_only
+      then
+        raise only_fetch_complete;
+      end if;
+
       IF p_vars.COUNT () <> 0
       THEN
          l_key       := p_vars.FIRST;
 
          LOOP
             EXIT WHEN l_key IS NULL;
-            p_template    := REPLACE (p_template, '${' || l_key || '}', TO_CLOB (p_vars (l_key)));
+
+            case
+                when l_key in ( 'object_name', 'name' ) then
+                    -- always replace certian vars
+                    replace_vars( l_key, p_vars( l_key ) );
+                when l_key = 'this' then
+                    -- special handling of ${this} and ${parent} vars
+                    replace_vars( l_key, p_vars(l_key) );
+
+                    -- render up to 10 parents deep
+                    l_value := p_vars( 'this' );
+                    l_pkey  := 'parent';
+                    for i in 1 .. 10
+                    loop
+                        l_value    := rtrim( regexp_substr( l_value, '^.+\.' ), '.' );
+                        replace_vars( l_pkey, l_value );
+                        l_pkey := l_pkey || 'parent';
+                    end loop;
+                when g_render_mode not in ( g_render_mode_parent_tags_only )
+                then
+                    -- replace other vars based on G_RENDER_MODE
+                    replace_vars( l_key, p_vars( l_key ) );
+                else
+                    null;
+            end case;
+            
             l_key       := p_vars.NEXT (l_key);
          END LOOP;
       END IF;
+      
+      if g_render_mode in ( g_render_mode_parent_tags_only )
+      then
+        raise only_parent_tags_complete;
+      end if;
    END bind_vars;
 
    /**
@@ -632,6 +689,20 @@ AS
 
       --Set template directive variables into var associative array
       set_template_directive (l_tmp, l_vars);
+      
+      if g_render_mode = g_render_mode_fetch_only
+      then
+          --Delete all template directives
+          p_template  :=
+             REGEXP_REPLACE (p_template
+                           , '<%@ template([^%>].*?)\s*%>[[:blank:]]*\s$?'
+                           , ''
+                           , 1
+                           , 0
+                           , 'n');
+
+        raise only_fetch_complete;
+      end if;
 
       --Bind the variables into template
       bind_vars (p_template, l_vars);
@@ -775,7 +846,7 @@ AS
        l_result          CLOB;
 
        l_str_tmp         VARCHAR2 (32767);
-       
+
        l_inc t_include_parameters;
 
        TYPE array_t IS TABLE OF VARCHAR2 (64);
@@ -840,7 +911,7 @@ AS
 
              -- translate the string
              l_inc := decode_include_parameters(l_str_tmp);
- 
+
              --get included template
              l_tmp       := get_template( l_inc );
 
@@ -909,7 +980,7 @@ AS
           END IF;
 
           l_number_includes := l_number_includes +1;
-          
+
           IF l_number_includes >= G_MAX_INCLUDES
           THEN
             raise_application_error (-20001, 'Too much include directive in the template, Recursive include?');
@@ -968,12 +1039,15 @@ AS
       --Set engine properties
       reset_system_defaults;
       process_engine_parameters(p_vars);
-
+      
       --Parse <% %> tags
       --parse (l_template);
 
       --Get Includes
-      get_includes(l_template, p_vars);
+      IF g_render_mode in ( g_render_mode_normal )
+      THEN
+        get_includes(l_template, p_vars);
+      END IF;
 
       --Interpret the template
       interpret(l_template, p_vars);
@@ -1030,6 +1104,10 @@ AS
       RETURN l_template;
 
    EXCEPTION
+     when only_fetch_complete then
+        return l_template;
+     when only_parent_tags_complete then
+        return l_template;
      WHEN OTHERS
      THEN
         --Trim buffer
@@ -1080,7 +1158,7 @@ AS
       l_inc.object_name   := p_object_name;
       l_inc.object_type   := p_object_type;
       l_inc.schema        := p_schema;
-      
+
       l_template := get_template( l_inc );
 
       -- verify that we found a template
@@ -1095,10 +1173,13 @@ AS
                                    , 'The object ' || p_object_name || ' not has a template inside the "$if false $then"');
          END IF;
       END IF;
-
+      
       --Render template
       l_result    := render (p_vars,l_template);
       RETURN l_result;
+   EXCEPTION
+     when only_fetch_complete then
+        return l_template;
    END process;
 END teplsql;
 /
