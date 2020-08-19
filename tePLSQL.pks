@@ -26,9 +26,11 @@ AS
    g_globbing_mode_on       constant t_template_variable_value := 'on';
    g_globbing_mode_regexp   constant t_template_variable_value := 'regexp';
    g_globbing_mode_like     constant t_template_variable_value := 'like';
-   g_render_mode_parent_tags_only  constant t_template_variable_value := 'parents';
-   g_render_mode_fetch_only constant t_template_variable_value := 'fetch';
-   g_render_mode_normal     constant t_template_variable_value := 'all';
+   
+   -- Valid values for reendering mode
+   g_render_mode_hierarch_tags_only    constant t_template_variable_value := 'parents';
+   g_render_mode_fetch_only            constant t_template_variable_value := 'fetch';
+   g_render_mode_normal                constant t_template_variable_value := 'all';
 
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE

@@ -23,8 +23,8 @@ AS
    -- run time global variables
    g_buffer         CLOB;
    
-   only_parent_tags_complete exception;
-   only_fetch_complete       exception;
+   only_hierarch_tags_complete exception;
+   only_fetch_complete         exception;
 
    /**
    * Resets all of the system options to default values
@@ -136,7 +136,7 @@ AS
 
                g_globbing_mode := l_value;
              WHEN g_set_render_mode THEN
-                IF l_value in ( g_render_mode_parent_tags_only, g_render_mode_fetch_only )
+                IF l_value in ( g_render_mode_hierarch_tags_only, g_render_mode_fetch_only )
                 THEN
                     g_render_mode := l_value;
                 ELSE
@@ -571,19 +571,19 @@ AS
                     -- always replace certian vars
                     replace_vars( l_key, p_vars( l_key ) );
                 when l_key = 'this' then
-                    -- special handling of ${this} and ${parent} vars
+                    -- special handling of ${this} and ${super} vars
                     replace_vars( l_key, p_vars(l_key) );
 
                     -- render up to 10 parents deep
                     l_value := p_vars( 'this' );
-                    l_pkey  := 'parent';
+                    l_pkey  := 'super';
                     for i in 1 .. 10
                     loop
                         l_value    := rtrim( regexp_substr( l_value, '^.+\.' ), '.' );
                         replace_vars( l_pkey, l_value );
-                        l_pkey := l_pkey || 'parent';
+                        l_pkey := l_pkey || '.super';
                     end loop;
-                when g_render_mode not in ( g_render_mode_parent_tags_only )
+                when g_render_mode not in ( g_render_mode_hierarch_tags_only )
                 then
                     -- replace other vars based on G_RENDER_MODE
                     replace_vars( l_key, p_vars( l_key ) );
@@ -595,9 +595,9 @@ AS
          END LOOP;
       END IF;
       
-      if g_render_mode in ( g_render_mode_parent_tags_only )
+      if g_render_mode in ( g_render_mode_hierarch_tags_only )
       then
-        raise only_parent_tags_complete;
+        raise only_hierarch_tags_complete;
       end if;
    END bind_vars;
 
@@ -1106,7 +1106,7 @@ AS
    EXCEPTION
      when only_fetch_complete then
         return l_template;
-     when only_parent_tags_complete then
+     when only_hierarch_tags_complete then
         return l_template;
      WHEN OTHERS
      THEN
