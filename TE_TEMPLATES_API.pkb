@@ -467,5 +467,442 @@ $END
       htp.p( 'No matching templates found' );
       apex_application.stop_apex_engine;
   END;
+
+$if false $then
+<%@ template( template_name=DefaultHelperTemplates.xml ) %>
+<teplsql>
+  <templates>
+    <template>
+      <NAME>teplsql.skeleton.default.function.name</NAME>
+      <TEMPLATE>${object_name}</TEMPLATE>
+      <DESCRIPTION>Name of the Function/Procedure</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.bdy</NAME>
+      <TEMPLATE>     return NULL;
+</TEMPLATE>
+      <DESCRIPTION>The body of the code</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.decl</NAME>
+      <TEMPLATE>-- set variables here</TEMPLATE>
+      <DESCRIPTION>variable/type/function/cursor definitions go her</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.spec</NAME>
+      <TEMPLATE>function &lt;%@ include( ${this}.name ) %&gt; return varchar2</TEMPLATE>
+      <DESCRIPTION>shortline specification for function/procedure</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.name</NAME>
+      <TEMPLATE>${object_name}</TEMPLATE>
+      <DESCRIPTION>Name of the Function/Procedure</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.body</NAME>
+      <TEMPLATE>CREATE OR REPLACE
+PACKAGE BODY ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
+AS
+&lt;%@ include( ${this}.function.%.body ) %&gt;\\n
+END;
+&lt;%= &apos;/&apos; %&gt;\\n</TEMPLATE>
+      <DESCRIPTION>code to generate the BODY of the package</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.specification</NAME>
+      <TEMPLATE>CREATE OR REPLACE
+PACKAGE ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
+AS
+&lt;%@ include( ${this}.documentation ) %&gt;
+
+&lt;%@ include( ${this}.type.%.specification ) %&gt;\\n
+
+&lt;%@ include( ${this}.exception.%.specification ) %&gt;\\n
+
+&lt;%@ include( ${this}.function.%.specification ) %&gt;\\n
+END;
+&lt;%= &apos;/&apos; %&gt;</TEMPLATE>
+      <DESCRIPTION>code to generate the specification</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.view_name</NAME>
+      <TEMPLATE>${schema}.&lt;%@ include( ${this}.name ) %&gt;</TEMPLATE>
+      <DESCRIPTION>View name of SQL</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.cursor_name</NAME>
+      <TEMPLATE>c_&lt;%@ include( ${this}.name ) %&gt;</TEMPLATE>
+      <DESCRIPTION>Name of cursor version of SQL</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.SQL</NAME>
+      <TEMPLATE>select * from dual</TEMPLATE>
+      <DESCRIPTION>The actual SQL statement</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.name</NAME>
+      <TEMPLATE>${object_name}</TEMPLATE>
+      <DESCRIPTION>Name of SQL statement</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.number</NAME>
+      <TEMPLATE>-20000</TEMPLATE>
+      <DESCRIPTION>Exception Number</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.text</NAME>
+      <TEMPLATE>&apos;Something went wrong&apos;</TEMPLATE>
+      <DESCRIPTION>Text displayed for a RAISE_APPLICATION_EXCEPTION.
+(in PL/SQL code format)</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.name</NAME>
+      <TEMPLATE>${object_name}</TEMPLATE>
+      <DESCRIPTION>name of the exception</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.raise_error</NAME>
+      <TEMPLATE>raise_application_error( &lt;%@ include( ${this}.number) %&gt;, &lt;%@ include( ${this}.text ) %&gt; );</TEMPLATE>
+      <DESCRIPTION>PL/Sql code that runs inside an EXCEPTION block</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.rcd_spec</NAME>
+      <TEMPLATE>SUBTYPE &lt;%@ include( ${this}.rcd_name ) %&gt; ${schema}.${table_name}%ROWTYPE;</TEMPLATE>
+      <DESCRIPTION>specification for RECORD TYPE.</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.nt_name</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.base_name) %&gt;_nt</TEMPLATE>
+      <DESCRIPTION>creates the name for the Nested Table TYPE.</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.rcd_name</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.base_name ) %&gt;_rcd</TEMPLATE>
+      <DESCRIPTION>Creates the name for the RECORD TYPE</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.aa_name</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.base_name) %&gt;_aa</TEMPLATE>
+      <DESCRIPTION>Name of the Associative Array TYPE</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.base_name</NAME>
+      <TEMPLATE>${table_name}</TEMPLATE>
+      <DESCRIPTION>common name for all related types</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.build.main</NAME>
+      <TEMPLATE>&lt;%!
+  cursor &quot;Columns&quot;( p_schema in varchar2, p_table_name in varchar2 ) is
+      select *
+      from all_tab_cols
+      where owner=p_schema and table_name=p_table_name;
+%&gt;
+
+/*
+  Building for ${this}
+
+  Time       : &lt;%= systimestamp %&gt;\\n
+  Schema     : ${schema}
+  Table Name : ${table_name}
+*/
+
+-- simple make all
+&lt;%@ include( ${this}%.make ) %&gt;</TEMPLATE>
+      <DESCRIPTION>top-level Build</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.documentation</NAME>
+      <TEMPLATE>/**
+  SQL &lt;%@ include( ${this}.name ) %&gt;
+
+*/</TEMPLATE>
+      <DESCRIPTION>Documentation for the SQL in PL/doc format</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.documentation</NAME>
+      <TEMPLATE>/**
+  Something didn&apos;t do what it was suppose to
+*/</TEMPLATE>
+      <DESCRIPTION>Documentation of the exception in PL/Doc format</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.documentation</NAME>
+      <TEMPLATE>/**
+  Function &lt;%@ include( ${this}.name ) %&gt;
+*/</TEMPLATE>
+      <DESCRIPTION>PL/Doc encoded documentation</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.documentation</NAME>
+      <TEMPLATE>/**
+      Place Description of Package here
+@headcom
+*/
+</TEMPLATE>
+      <DESCRIPTION>PL/Doc encoded documentation</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.body</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.spec ) %&gt;\\n
+AS
+&lt;%@ include( ${this}.decl ) %&gt;\\n
+BEGIN
+&lt;%@ include( ${this}.bdy ) %&gt;\\n
+END &lt;%@ include( ${this}.name ) %&gt;;\\n</TEMPLATE>
+      <DESCRIPTION>Body of the function for a Package</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function.specification</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;\\n
+&lt;%@ include( ${this}.spec ) %&gt;;</TEMPLATE>
+      <DESCRIPTION>Specification of the function for a Package</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.make</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.specification ) %&gt;
+
+&lt;%@ include( ${this}.body ) %&gt;</TEMPLATE>
+      <DESCRIPTION>makes both specification followed by the body</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.package.init</NAME>
+      <TEMPLATE>  BEGIN
+    NULL;
+  end;
+
+</TEMPLATE>
+      <DESCRIPTION>Initialization code for the package</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.SQL.make_view</NAME>
+      <TEMPLATE>create or replace
+view &lt;%@ include( ${this}.view_name )%&gt;\\n
+as
+&lt;%@ include( ${this}.SQL )%&gt;
+;</TEMPLATE>
+      <DESCRIPTION>creates the VIEW</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.specification</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.name ) %&gt;  exception;
+&lt;%@ include( ${this}.constant_number_name ) %&gt; constant int := &lt;%@ include( ${this}.number ) %&gt;;
+&lt;%@ include( ${this}.constant_text_name ) %&gt; constant varchar2(4000) := &apos;&lt;%@ include( ${this}.name ) %&gt;&apos;;
+pragma exception_init( &lt;%@ include( ${this}.name ) %&gt;, &lt;%@ include( ${this}.constant_number_name ) %&gt; );</TEMPLATE>
+      <DESCRIPTION>specification for all parts of an exception.</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.constant_text_name</NAME>
+      <TEMPLATE>g_&lt;%@ include( ${this}.name ) %&gt;_txt</TEMPLATE>
+      <DESCRIPTION>constant that hold the exception name as a varchar</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.constant_number_name</NAME>
+      <TEMPLATE>g_&lt;%@ include( ${this}.name ) %&gt;#</TEMPLATE>
+      <DESCRIPTION>name of the constant that holds the error number.</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.exception.exception</NAME>
+      <TEMPLATE>when &lt;%@ include( ${this}.name ) %&gt; then
+    &lt;%@ include( ${this}.plsql ) %&gt;</TEMPLATE>
+      <DESCRIPTION>Exception where clause for this exception.</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.specification</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;\\n
+&lt;%@ include( ${this}.rcd_spec ) %&gt;\\n
+&lt;%@ include( ${this}.nt_spec ) %&gt;\\n
+&lt;%@ include( ${this}.aa_spec ) %&gt;\\n</TEMPLATE>
+      <DESCRIPTION>Creates the specification for a record, nested tab</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.aa_spec</NAME>
+      <TEMPLATE>TYPE &lt;%@ include( ${this}.aa_name ) %&gt; is table of &lt;%@ include( ${this}.rcd_name ) %&gt; index by pls_integer;</TEMPLATE>
+      <DESCRIPTION>Creates the Associative Array TYPE</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.nt_spec</NAME>
+      <TEMPLATE>TYPE &lt;%@ include( ${this}.nt_name ) %&gt; is table of &lt;%@ include( ${this}.rcd_name ) %&gt;;</TEMPLATE>
+      <DESCRIPTION>specification for the Nested Table TYPE</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.type.documentation</NAME>
+      <TEMPLATE>/*
+  Description of this type
+*/</TEMPLATE>
+      <DESCRIPTION>PL/Doc style comments</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.skeleton.default.function</NAME>
+      <TEMPLATE>CREATE OR REPLACE
+&lt;%= &apos;&lt;&apos; %&gt;%@ include( ${pfname}.spec ) %&lt;%= &apos;&gt;&apos; %&gt;&lt;%= &apos;\&apos; || &apos;\&apos; || &apos;n&apos; %&gt;
+AS
+&lt;%= &apos;&lt;&apos; %&gt;%@ include( ${pfname}.decl ) %&lt;%= &apos;&gt;&apos; %&gt;&lt;%= &apos;\&apos; || &apos;\&apos; || &apos;n&apos; %&gt;
+BEGIN
+&lt;%= &apos;&lt;&apos; %&gt;%@ include( ${pfname}.bdy ) %&lt;%= &apos;&gt;&apos; %&gt;&lt;%= &apos;\&apos; || &apos;\&apos; || &apos;n&apos; %&gt;
+END;
+&lt;%= &apos;&lt;&apos; %&gt;%= &apos;/&apos; %&lt;%= &apos;&gt;&apos; %&gt;&lt;%= &apos;\&apos; || &apos;\&apos; || &apos;n&apos; %&gt;</TEMPLATE>
+      <DESCRIPTION>Template for a Standalone function</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-15</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+  </templates>
+</teplsql>
+
+$end
 END;
 /
