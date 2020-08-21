@@ -97,5 +97,16 @@ AS
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;
+      
+    function copy_helper_template( to_base_name in varchar2
+                              ,from_base_name in varchar2
+                              ,object_type in varchar2
+                              ,object_name in varchar2
+                              ,use_gtt in varchar2 default null )
+                        return varchar2;
+
+    function build_code_from_xml( xml_build in xmltype, to_base_name in varchar2, use_gtt in varchar2 default null ) return varchar2;
+
+
 END teplsql;
 /

@@ -383,6 +383,35 @@ AS
       RETURN l_template;
    END get_template_by_obj;
 
+    /*
+     * merges template into TE_TEMPLATES or a GTT/PTT
+     */
+    procedure set_template( name         in te_templates.name%type
+                            ,template    in te_templates.template%type
+                            ,description in te_templates.description%type default null
+                            ,use_gtt     in varchar2                      default null )
+    as
+    begin
+        case use_gtt
+            when 'GTT' then
+                raise no_data_found;
+            when 'PTT' then
+                raise no_data_found;
+            else
+                merge into te_templates a
+                using (select set_template.template   as template
+                            ,set_template.name        as name
+                            ,set_template.description as description
+                        from dual) b
+                on (a.name = b.name)
+                when matched then update
+                    set a.template=b.template, a.description = nvl(b.description,a.description)
+                when not matched then insert ( name, template )
+                    values (b.name, b.template);
+         end case;
+    end set_template;
+            
+
    /**
    *  Retrieves the template based on the input.
    *  This code is responsible for deciding where the template is stored.
@@ -1181,5 +1210,143 @@ AS
      when only_fetch_complete then
         return l_template;
    END process;
+
+    function copy_helper_template( to_base_name in varchar2
+                                  ,from_base_name in varchar2
+                                  ,object_type in varchar2
+                                  ,object_name in varchar2
+                                  ,use_gtt in varchar2 default null )
+                            return varchar2
+    as
+    
+      l_vars            teplsql.t_assoc_array;
+      
+      l_template        CLOB;
+    begin
+        -- to be corrected by #43
+--        select a.object_type_id
+--            into copy_helper_template.object_type_id
+--        from te_skeleton_objects a
+--        where a.skeleton_class = copy_helper_template.helper_class
+--          and a.object_type  = copy_helper_template.object_type;
+        
+        -- fetch a BLOCK render hiearchal tags only
+        l_vars('this')        := to_base_name || '.' || object_type || '.' || object_name;
+        l_vars('object_name') := object_name;
+        
+        l_vars( g_set_render_mode ) := g_render_mode_hierarch_tags_only;
+
+        -- clear buffers    
+        l_template := NULL;
+    
+       -- loop matching templates (to be fixed by #43)
+        for curr in (   select a.name template_name
+                            ,a.description
+                            ,ltrim(regexp_substr( a.name, '\.[^.]+$' ),'.') fragment_name
+                        from te_templates a
+                        where regexp_like( a.name, '^' || nvl(from_base_name, 'teplsql.skeleton.default' )
+                                        || '\.' || object_type || '\.[^.]+$' )
+                    )
+        loop
+            dbms_output.put_line( ' ... Copying from "' || curr.template_name || '" to "' || l_vars('this') || '.' || curr.fragment_name || '"' );
+            l_template := process(p_vars =>  l_vars, p_template_name => curr.template_name );
+            
+            set_template( l_vars('this') || '.' || curr.fragment_name
+                        ,l_template, curr.description, use_gtt );
+        end loop;
+    
+        return l_vars('this');
+
+  END copy_helper_template;
+
+    function build_code_from_xml( xml_build in xmltype, to_base_name in varchar2, use_gtt in varchar2 default null ) return varchar2
+    as
+        object_name      varchar2(500);
+        this_object_name varchar2(500);
+        clob_buff        clob;
+        
+        p_vars teplsql.t_assoc_array;
+        result_clob clob;
+        err_clob   clob;
+    begin
+
+        /*
+            1. loop over XML objects
+               2. object_name := copy skeleton
+               3. loop <blocks/block>
+                  4. get new template <block>
+                  5. replace tags
+                  6. merge template with that in table
+               7. last_child := build_code_from_xml( 'subObjects' )
+            8. return last object_name
+        */
+        -- parse XML
+        <<step1>>
+        for curr in (
+                    with parse_xml as (
+                        select b.object_type, b.base_name, b.object_name, b.modifications, b.children
+                        from xmltable( '/extends'
+                            passing xml_build
+                            columns
+                                object_type     varchar2(500) path '/extends/@object_type'
+                                ,base_name   varchar2(500) path '/extends/@base_name'
+                                ,object_name    varchar2(500) path '/extends/@object_name'
+                                ,modifications  xmltype       path '/extends/modifications'
+                                ,children        xmltype       path '/extends/children'
+                            ) b
+                        union all
+                        select b.object_type, b.base_name, b.object_name, b.modifications, b.xml_dat
+                        from xmltable( '/children/extends'
+                            passing xml_build
+                            columns
+                                object_type     varchar2(500) path '/extends/@object_type'
+                                ,base_name   varchar2(500) path '/extends/@base_name'
+                                ,object_name    varchar2(500) path '/extends/@object_name'
+                                ,modifications  xmltype       path '/extends/blocks'
+                                ,xml_dat        xmltype       path '/extends/children'
+                            ) b
+                    )
+                    select *
+                    from parse_xml
+                )
+        loop
+            -- STEP 2
+            this_object_name := copy_helper_template( to_base_name
+                                  ,nvl( curr.base_name, 'teplsql.helper.default' )
+                                  ,curr.object_type
+                                  ,coalesce(curr.object_name, 'rng$' || dbms_random.string( 'X', '12' ) )
+                                  ,use_gtt );
+    
+            <<step3>>
+            for mcur in ( select * 
+                         from xmltable( '/blocks/block'
+                                    passing curr.modifications
+                                    columns
+                                        fragment_name varchar2(50) path '/block/@fragment_name',
+                                        fragment_code clob         path '/block'
+                                ) b
+                            )
+            loop
+    
+                -- STEP 4 - get new template
+                clob_buff := mcur.fragment_code;
+    
+                -- STEP 5 - render TAGS
+                p_vars( g_set_render_mode ) := g_render_mode_hierarch_tags_only;
+                p_vars( 'this' ) := this_object_name;
+                
+                result_clob := render( p_vars, clob_buff, err_clob );
+                
+                -- STEP 6
+                set_template( this_object_name || '.' || mcur.fragment_name, result_clob );
+    
+            end loop;
+            
+            object_name := build_code_from_xml( curr.children, this_object_name );
+        end loop;
+        
+        return this_object_name;
+    end build_code_from_xml;
+
 END teplsql;
 /
