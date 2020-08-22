@@ -108,5 +108,13 @@ AS
     function build_code_from_xml( xml_build in xmltype, to_base_name in varchar2, use_gtt in varchar2 default null ) return varchar2;
 
 
+    function indent_template( p_clob in clob
+                            , indent_size in int default 0
+                            , indent_txt  in varchar2 default '  ' )
+                    return clob;
+
+    function convert_extends( p_clob in clob ) return clob;
+    procedure validate_build_template( template_clob in clob );
+
 END teplsql;
 /

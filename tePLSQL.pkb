@@ -4,7 +4,8 @@ AS
   type t_include_parameters is record ( template_name TE_TEMPLATES.NAME%TYPE
                                       , object_name   varchar2(64)
                                       , object_type   varchar2(64)
-                                      , schema        varchar2(64) );
+                                      , schema        varchar2(64)
+                                      , indent        int );
 
    null_include_parameters t_include_parameters;
 
@@ -88,6 +89,11 @@ AS
          IF l_string_tt.EXISTS (4)
          THEN
             l_ret.schema := l_string_tt (4);
+         END IF;
+
+         IF l_string_tt.EXISTS (5)
+         THEN
+            l_ret.indent := l_string_tt (5);
          END IF;
       END IF;
 
@@ -1291,20 +1297,20 @@ AS
                                 object_type     varchar2(500) path '/extends/@object_type'
                                 ,base_name   varchar2(500) path '/extends/@base_name'
                                 ,object_name    varchar2(500) path '/extends/@object_name'
-                                ,modifications  xmltype       path '/extends/modifications'
-                                ,children        xmltype       path '/extends/children'
+                                ,modifications  xmltype       path '/extends/block'
+                                ,children        xmltype       path '/extends/extends'
                             ) b
-                        union all
-                        select b.object_type, b.base_name, b.object_name, b.modifications, b.xml_dat
-                        from xmltable( '/children/extends'
-                            passing xml_build
-                            columns
-                                object_type     varchar2(500) path '/extends/@object_type'
-                                ,base_name   varchar2(500) path '/extends/@base_name'
-                                ,object_name    varchar2(500) path '/extends/@object_name'
-                                ,modifications  xmltype       path '/extends/blocks'
-                                ,xml_dat        xmltype       path '/extends/children'
-                            ) b
+--                        union all
+--                        select b.object_type, b.base_name, b.object_name, b.modifications, b.xml_dat
+--                        from xmltable( '/children/extends'
+--                            passing xml_build
+--                            columns
+--                                object_type     varchar2(500) path '/extends/@object_type'
+--                                ,base_name   varchar2(500) path '/extends/@base_name'
+--                                ,object_name    varchar2(500) path '/extends/@object_name'
+--                                ,modifications  xmltype       path '/extends/blocks'
+--                                ,xml_dat        xmltype       path '/extends/extends'
+--                            ) b
                     )
                     select *
                     from parse_xml
@@ -1319,7 +1325,7 @@ AS
     
             <<step3>>
             for mcur in ( select * 
-                         from xmltable( '/blocks/block'
+                         from xmltable( '/block'
                                     passing curr.modifications
                                     columns
                                         fragment_name varchar2(50) path '/block/@fragment_name',
@@ -1347,6 +1353,190 @@ AS
         
         return this_object_name;
     end build_code_from_xml;
+
+    function indent_template( p_clob in clob
+                            , indent_size in int default 0
+                            , indent_txt  in varchar2 default '  ' )
+                    return clob
+    is
+        l_clob   clob;
+    begin
+        l_clob := p_clob;
+        
+        if nvl(indent_size,0) <= 0
+        then
+            null;
+        else
+            for i in 1 .. indent_size
+            loop
+                l_clob := regexp_replace( l_clob, '^', indent_txt, 1, 0, 'm');
+            end loop;
+        end if;
+        
+        return l_clob;
+    end indent_template;
+
+    function convert_blocks( p_clob in clob ) return clob
+    as
+        block_tag_clob clob;
+        block_att_clob clob;
+        block_txt_clob clob;
+        block_final_clob clob;
+        
+        first_extends_pos int;
+        last_extends_pos  int;
+        cnt_extends       int;
+        extends_clob      clob;
+        
+        first_block_pos   int;
+        last_block_pos    int;
+        cnt_blocks        int;
+        
+        anti_infinite_loop int := 0;
+    begin
+        if not regexp_like(p_clob, '<%@ *block[^>]*%>(.*?)<%@ *enblock *%>','n')
+        then
+            return p_clob;
+        end if;
+        
+        -- preserve the <extends> block of text
+        cnt_extends       := regexp_count(p_clob, '<extends[^>]*>',1,'n');
+        if cnt_extends > 0
+        then
+            first_extends_pos := regexp_instr(p_clob, '<extends[^>]*>',1,1,0 ,'n');
+            last_extends_pos  := regexp_instr(p_clob, '</extends>',1,cnt_extends,1 ,'n');
+            extends_clob := substr( p_clob, first_extends_pos, last_extends_pos - first_extends_pos );
+        else
+            extends_clob := null;
+        end if;
+        
+        -- extract out <block> tags
+        cnt_blocks   := regexp_count(p_clob, '<%@ *block[^>]*%>',1,'n');
+        if cnt_blocks > 0
+        then
+            first_block_pos := regexp_instr( p_clob, '<%@ *block[^>]*%>',1,1,1,'n');
+            last_block_pos := regexp_instr( p_clob, '<%@ *enblock *%>',1,cnt_blocks,0,'n');
+            block_final_clob := substr( p_clob, first_block_pos, last_block_pos - first_block_pos );
+        else
+            block_final_clob := null;
+        end if;
+        
+        block_final_clob := p_clob;
+        
+        -- LOOP over all <block> tags
+        while ( regexp_like( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>','n')
+                and anti_infinite_loop <= 25 )
+        loop
+        anti_infinite_loop := anti_infinite_loop + 1;
+        -- find <block> of text
+        block_tag_clob     := regexp_substr( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>',1,1,'n');
+        block_att_clob     := regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock ?%>', '\1',1,1,'n');
+        
+        -- convert text to XML
+        select xmlelement("block", regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock *%>', '\2',1,1,'n') ).getclobval()
+            into block_txt_clob
+        from dual;
+        
+        -- add attributes back to XML tag
+        block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
+        
+        -- replace text
+        block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
+        end loop;
+        
+        return  block_final_clob || extends_clob;
+        
+    end;
+
+    function convert_extends( p_clob in clob ) return clob
+    as
+        l_clob       clob;
+        c_clob clob;
+        
+        extends_clob clob;
+        extends_att  clob;
+
+        start_txt_pos int;
+        end_txt_pos   int;
+        start_tag_pos int;
+        end_tag_pos   int;
+        cnt           int;
+        
+        anti_infinite_loop int := 1;
+    begin
+        l_clob := p_clob;
+        
+        while( anti_infinite_loop < 100 and regexp_like(l_clob, '<%@ *extends([^>]*?)%>.*<%@ *enextends *%>','n' ) )
+        loop
+            anti_infinite_loop := anti_infinite_loop + 1;
+            if regexp_like(l_clob, '<%@ *extends([^>]*?)%>.*<%@ *enextends *%>','n' )
+            then
+                cnt            := regexp_count(l_clob, '<%@ *?extends([^>]*?)%>',1,'n');
+                dbms_output.put_line( anti_infinite_loop || ' =>  ' || regexp_substr( p_clob, '<%@ *extends([^>]*?)%>', 1, cnt, 'n' ) );
+    
+                start_txt_pos  := regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,1 ,'n'); -- grab last <extends>
+                end_txt_pos    := regexp_instr(l_clob, '<%@ *enextends *%>',start_txt_pos,1,0,'n'); -- grab first </extends> (after last <extends>)
+    
+                start_tag_pos  := regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,0 ,'n');
+                end_tag_pos    := regexp_instr(l_clob, '<%@ *enextends *%>',start_txt_pos,1,1,'n');
+                
+                -- get the attributes
+                extends_att := regexp_replace( regexp_substr( l_clob, '<%@ *extends([^>]*?)%>', regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,0 ,'n') )
+                                                ,'<%@ *?extends([^>]*?)%>', '\1');
+                -- and adjust them for XML
+                -- TODO
+                
+                dbms_output.put_line( '  attributes= ~' || extends_att || '~' );
+        
+                -- calculate the replacement text
+                extends_clob := to_clob( '<extends ' || extends_att || '>' )
+                                || convert_blocks( substr( l_clob, start_txt_pos, end_txt_pos - start_txt_pos ) )
+                                || to_clob( '</extends>' );
+                                
+                -- replace found-tag with extends_clob
+                if start_tag_pos = 1
+                then
+                    c_clob := extends_clob; -- '---'; --extends_clob;
+                else
+                    c_clob := substr( l_clob, 1, start_tag_pos -1) -- pre <extends>
+                            || extends_clob                        -- replacement text
+                            || substr( l_clob, end_tag_pos );      -- post </extends>
+                    dbms_output.put_line( ' ========= ' );
+                end if;
+                
+                l_clob := c_clob;
+            else
+                dbms_output.put_line( 'no sub extends' );
+--                l_clob := p_clob;
+            end if;
+        end loop;
+    
+        return l_clob;
+
+    end;
+    
+    procedure validate_build_template( template_clob in clob )
+    as
+        cnt_extends   int;
+        cnt_enextends int;
+        cnt_block     int;
+        cnt_enblock   int;
+    begin
+        cnt_extends   := regexp_count(template_clob, '<%@ *extends([^>]*?)%>',1,'n');
+        cnt_enextends := regexp_count(template_clob, '<%@ *enextends *%>',1,'n');
+        cnt_block     := regexp_count(template_clob, '<%@ *block([^>]*?)%>',1,'n');
+        cnt_enblock   := regexp_count(template_clob, '<%@ *enblock([^>]*?)%>',1,'n');
+        
+        if nvl(cnt_extends,0) <> nvl(cnt_enextends,0)
+        then
+            raise_application_error( -20005, 'Mismatched <%@ extends %> tag. ' || cnt_extends || ' vs ' || cnt_enextends );
+        elsif nvl(cnt_block,0)<> nvl(cnt_enblock,0)
+        then
+            raise_application_error( -20005, 'Mismatched <%@ block %> tag. ' || cnt_block || ' vs ' || cnt_enblock );
+        end if;
+    end;
+
+
 
 END teplsql;
 /
