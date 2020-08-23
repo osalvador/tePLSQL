@@ -35,6 +35,7 @@ For a quick look see [basic example](#basic-example). The best example of use te
 - [Advance Topics](#advance)
     + [tePLSQL Engine's Options](#engineOptions)
     + [Template Globbing](#templateGlobbing)
+    + [Build Templates](#BuildTemplates)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -181,7 +182,7 @@ END;
 
 #### Syntax
 ```   
-   <%@ include(template_name, object_name, object_type, schema) %>
+   <%@ include(template_name, object_name, object_type, schema, indent ) %>
 ```
 
 |Parameter | Description
@@ -190,6 +191,7 @@ END;
 | `object_name`| The name of the object (usually the name of the package). Default TE_TEMPLATES table. 
 | `object_type`| The type of the object (PACKAGE, PROCEDURE, FUNCTION...). Default PACKAGE.
 | `schema`| The schema of the object. Default NULL.
+| `indent`| Indent the included template results?  1=yes, 0=no (default) 
 
 You can use the include feature to pull in libraries of code into multiple templates. Alternatively, you can use this feature as a macro capability to include the same section of script code in multiple places in a template. 
 
@@ -969,6 +971,8 @@ The argument names are defined as constants within the tePLSQL package specifica
 |g_set_max_includes | integers >0 | 50 | [sets the maximum number of `include`](#maxInclude)
 |g_set_globbing_mode | constants `g_globbing_mode_*` | off | sets the search mode for [Template Globbing](#templateGlobbing).
 |g_set_globbing_separator | any valid string | `chr(10)` | The string used between globbed templates.  More information is [here](#templateSeparator)
+|g_set_render_mode | constants `g_render_mode_*` | normal | Defines the type of rendering to be done.  More information is [here](#RenderModes)
+|g_set_indention_string | any valid string | `'    '` (4 spaces) | Sets the string used for indentions.
 
 
 <a name="maxInclude"></a>
@@ -1059,6 +1063,67 @@ Example
   -- all globbed templates are separated by a single 80 column block comment line.
   p_vars( teplsql.g_set_globbing_separator ) := chr(10) || '/' || lpad('*',78,'*') || '/' || chr(10);
 ```
+
+<a name="RenderModes"></a>
+### Render Modes
+This defines the various ways to render the extracted templates.
+
+| Render Mode | Description
+|-------------|------------
+| g_render_mode_normal | (default) Renders the template normally.
+| g_render_mode_fetch_only | Retrieves the template and processes only the `<%@ template() %>` directives
+| g_render_mode_hierarch_tags_only | Retrieves the template, processes only the `<%@ template() %>` directives and hierarchal tags `${this}`, `${super}`, `${super.super}`, etc.
+| TBD | The template is a Build XML file. see BuildTemlates
+| TBD | The template is a Build Template. see BuildTemplates
+
+
+<a name="BuildTemplates"></a>
+### Build Templates/XML
+Similar to `jinja` for HTML documents, you can build a set of DB Objects by "extending" multiple Helper Templates.
+
+This can be done via Build Template or a Build XML file.
+
+Build XML is just the XML version of a Build Template.
+
+NOTE: the resulting templates (created from a Build) are stored in `TE_TEMPLATES` with a name format of `${base_name}.${object_type}.${object_name}.${block}`. As such, when you need to reference another object, you need to use `${super.super}` instead of just `${super}`.
+
+
+#### Extending a Helper Template
+To include/extend a Helper Template, use `<%@ extends object_type="xxx" object_name"xxx" base_name="xxxx" %>` and close with an `<%@ enextends %>`.
+
+To modify the code in a Helper Template, place the new template code between `<%@ block block_name="xxx" %>` and `<%@ enblock %>` with `block_name="xxx"` representing the section of code you want to replace.  The `<%@ block %> ... <%@ endblock %>` code should be within the `<%@ extends %> ... <%@ enextends %>` tags.
+
+You can "extend" other helper templates within a helper template. For exmple, you can add a function to a function of a package.
+
+example:
+```sql
+<%@ extends object_type="package" object_name="my_pkg" %>
+<%@ extends object_type="function" object_name="outer_f" %>
+<%@ extends object_type="function" object_name="inner_f" %>
+<%@ enextends %>
+<%@ enextends %>
+<%@ enextends %>
+```
+
+results in
+```plsql
+-- TBD
+```
+
+#### Default Helper Templates
+Helper Templates stored in the `TE_TEMPLATES` table have the format of `${base_name}.${object_type}.${block}`.  The default value for `${base_name}` is `teplsql.helper.default`.
+
+The included default Helper Templates are:
+| `${object_type}` | Description
+|------------------|---------------
+| build  | Includes cursors, etc. in its definition. You should always start with one of these.
+| package | Use this Helper Template to create a package.
+| function | Use this Helper Template to create a function/procedure.  Usually included in a `package` or `function`
+| exception | Use this Helper Template to create an `exception`.  Use this in a `package` or `function`.
+| type | Use to create a series of PL/SQL Types. Used in a `package` or `function`.
+| SQL | Used to define a `select` statement used in a View, Cursor, or CTE.
+
+
 
 <a name="contributing"></a>
 ## Contributing
