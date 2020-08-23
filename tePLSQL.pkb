@@ -22,7 +22,12 @@ AS
    g_render_mode         t_template_variable_value := g_render_mode_default;
 
    -- run time global variables
-   g_buffer         CLOB;
+   g_buffer          CLOB;
+   g_indention_level int := 1;
+   g_max_indention_level constant int := 20;
+   
+   type t_indentable_clob is varray(20) of clob;
+   g_buffer2     t_indentable_clob := new t_indentable_clob();
    
    only_hierarch_tags_complete exception;
    only_fetch_complete         exception;
@@ -953,7 +958,11 @@ AS
              --Interpret the template
              interpret (l_tmp, p_vars);
 
-             l_tmp := ']'');'|| l_tmp ||' tePLSQL.p(q''[';
+             l_tmp := ']'');'
+                    || case when l_inc.indent > 0 then chr(10) || 'teplsql.begin_indent;' || chr(10) end
+                    ||  l_tmp 
+                    || case when l_inc.indent > 0 then chr(10) || 'teplsql.end_indent;' || chr(10) end
+                    ||' tePLSQL.p(q''[';
 
              --Start and End of the expression
              l_start     :=
@@ -1023,41 +1032,91 @@ AS
 
        END LOOP;
     END get_includes;
+    
+   procedure begin_indent( n in int default null )
+   as
+   begin
+      g_indention_level := g_indention_level + 1;
+      if g_indention_level > g_max_indention_level
+      then
+        raise_application_error( -20005, 'To many indentions' );
+      end if;
 
+      g_buffer2.extend;
+
+   end begin_indent;
+   
+   procedure end_indent
+   as
+   begin
+        -- indent buffer results
+        g_buffer2( g_indention_level ) :=
+            regexp_replace( g_buffer2( g_indention_level ) , '^'
+                            ,'    ', 1, 0, 'm' );
+
+        -- indention level decrement
+        g_indention_level := greatest( g_indention_level - 1, 1);
+        
+        -- append the upper indetion results to the lower one
+        g_buffer2( g_indention_level ) := g_buffer2( g_indention_level ) || g_buffer2( g_indention_level + 1 );
+        g_buffer2( g_indention_level + 1 ) := null; -- and set the upper one to NULL
+        g_buffer2.trim;
+   end end_indent;
    PROCEDURE PRINT (p_data IN CLOB)
    AS
    BEGIN
-      g_buffer    := g_buffer || p_data;
+      p(p_data);
+--      g_buffer    := g_buffer || p_data;
    END PRINT;
 
    PROCEDURE PRINT (p_data IN VARCHAR2)
    AS
    BEGIN
-      g_buffer    := g_buffer || p_data;
+      p(p_data);
+--      g_buffer    := g_buffer || p_data;
    END PRINT;
 
    PROCEDURE PRINT (p_data IN NUMBER)
    AS
    BEGIN
-      g_buffer    := g_buffer || TO_CHAR (p_data);
+      p(p_data);
+--      g_buffer    := g_buffer || TO_CHAR (p_data);
    END PRINT;
 
    PROCEDURE p (p_data IN CLOB)
    AS
    BEGIN
+      if g_buffer2.count < 1
+      then
+        g_buffer2.extend;
+      end if;
+      
       g_buffer    := g_buffer || p_data;
+      g_buffer2( g_indention_level )  := g_buffer2( g_indention_level ) || p_data;
    END p;
 
    PROCEDURE p (p_data IN VARCHAR2)
    AS
    BEGIN
+      if g_buffer2.count < 1
+      then
+        g_buffer2.extend;
+      end if;
+      
       g_buffer    := g_buffer || p_data;
+      g_buffer2( g_indention_level )  := g_buffer2( g_indention_level ) || p_data;
    END p;
 
    PROCEDURE p (p_data IN NUMBER)
    AS
    BEGIN
+      if g_buffer2.count < 1
+      then
+        g_buffer2.extend;
+      end if;
+      
       g_buffer    := g_buffer || TO_CHAR (p_data);
+      g_buffer2( g_indention_level )  := g_buffer2( g_indention_level ) || TO_CHAR (p_data);
    END p;
 
    FUNCTION render (p_vars             IN            t_assoc_array DEFAULT null_assoc_array
@@ -1134,6 +1193,7 @@ AS
       $end
 
       l_template  := g_buffer;
+      l_template  := g_buffer2(1);
       g_buffer    := NULL;
 
       RETURN l_template;
@@ -1254,7 +1314,6 @@ AS
                                         || '\.' || object_type || '\.[^.]+$' )
                     )
         loop
-            dbms_output.put_line( ' ... Copying from "' || curr.template_name || '" to "' || l_vars('this') || '.' || curr.fragment_name || '"' );
             l_template := process(p_vars =>  l_vars, p_template_name => curr.template_name );
             
             set_template( l_vars('this') || '.' || curr.fragment_name
@@ -1275,6 +1334,7 @@ AS
         result_clob clob;
         err_clob   clob;
     begin
+        g_buffer2   := new t_indentable_clob();
 
         /*
             1. loop over XML objects
@@ -1300,17 +1360,6 @@ AS
                                 ,modifications  xmltype       path '/extends/block'
                                 ,children        xmltype       path '/extends/extends'
                             ) b
---                        union all
---                        select b.object_type, b.base_name, b.object_name, b.modifications, b.xml_dat
---                        from xmltable( '/children/extends'
---                            passing xml_build
---                            columns
---                                object_type     varchar2(500) path '/extends/@object_type'
---                                ,base_name   varchar2(500) path '/extends/@base_name'
---                                ,object_name    varchar2(500) path '/extends/@object_name'
---                                ,modifications  xmltype       path '/extends/blocks'
---                                ,xml_dat        xmltype       path '/extends/extends'
---                            ) b
                     )
                     select *
                     from parse_xml
@@ -1353,28 +1402,6 @@ AS
         
         return this_object_name;
     end build_code_from_xml;
-
-    function indent_template( p_clob in clob
-                            , indent_size in int default 0
-                            , indent_txt  in varchar2 default '  ' )
-                    return clob
-    is
-        l_clob   clob;
-    begin
-        l_clob := p_clob;
-        
-        if nvl(indent_size,0) <= 0
-        then
-            null;
-        else
-            for i in 1 .. indent_size
-            loop
-                l_clob := regexp_replace( l_clob, '^', indent_txt, 1, 0, 'm');
-            end loop;
-        end if;
-        
-        return l_clob;
-    end indent_template;
 
     function convert_blocks( p_clob in clob ) return clob
     as
@@ -1427,26 +1454,26 @@ AS
         while ( regexp_like( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>','n')
                 and anti_infinite_loop <= 25 )
         loop
-        anti_infinite_loop := anti_infinite_loop + 1;
-        -- find <block> of text
-        block_tag_clob     := regexp_substr( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>',1,1,'n');
-        block_att_clob     := regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock ?%>', '\1',1,1,'n');
-        
-        -- convert text to XML
-        select xmlelement("block", regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock *%>', '\2',1,1,'n') ).getclobval()
-            into block_txt_clob
-        from dual;
-        
-        -- add attributes back to XML tag
-        block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
-        
-        -- replace text
-        block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
+            anti_infinite_loop := anti_infinite_loop + 1;
+            -- find <block> of text
+            block_tag_clob     := regexp_substr( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>',1,1,'n');
+            block_att_clob     := regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock ?%>', '\1',1,1,'n');
+            
+            -- convert text to XML
+            select xmlelement("block", regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock *%>', '\2',1,1,'n') ).getclobval()
+                into block_txt_clob
+            from dual;
+            
+            -- add attributes back to XML tag
+            block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
+            
+            -- replace text
+            block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
         end loop;
         
         return  block_final_clob || extends_clob;
         
-    end;
+    end convert_blocks;
 
     function convert_extends( p_clob in clob ) return clob
     as
@@ -1472,7 +1499,7 @@ AS
             if regexp_like(l_clob, '<%@ *extends([^>]*?)%>.*<%@ *enextends *%>','n' )
             then
                 cnt            := regexp_count(l_clob, '<%@ *?extends([^>]*?)%>',1,'n');
-                dbms_output.put_line( anti_infinite_loop || ' =>  ' || regexp_substr( p_clob, '<%@ *extends([^>]*?)%>', 1, cnt, 'n' ) );
+                -- dbms_output.put_line( anti_infinite_loop || ' =>  ' || regexp_substr( p_clob, '<%@ *extends([^>]*?)%>', 1, cnt, 'n' ) );
     
                 start_txt_pos  := regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,1 ,'n'); -- grab last <extends>
                 end_txt_pos    := regexp_instr(l_clob, '<%@ *enextends *%>',start_txt_pos,1,0,'n'); -- grab first </extends> (after last <extends>)
@@ -1485,8 +1512,7 @@ AS
                                                 ,'<%@ *?extends([^>]*?)%>', '\1');
                 -- and adjust them for XML
                 -- TODO
-                
-                dbms_output.put_line( '  attributes= ~' || extends_att || '~' );
+                -- dbms_output.put_line( '  attributes= ~' || extends_att || '~' );
         
                 -- calculate the replacement text
                 extends_clob := to_clob( '<extends ' || extends_att || '>' )
@@ -1501,19 +1527,17 @@ AS
                     c_clob := substr( l_clob, 1, start_tag_pos -1) -- pre <extends>
                             || extends_clob                        -- replacement text
                             || substr( l_clob, end_tag_pos );      -- post </extends>
-                    dbms_output.put_line( ' ========= ' );
                 end if;
                 
                 l_clob := c_clob;
             else
-                dbms_output.put_line( 'no sub extends' );
---                l_clob := p_clob;
+                null;
             end if;
         end loop;
     
         return l_clob;
 
-    end;
+    end convert_extends;
     
     procedure validate_build_template( template_clob in clob )
     as
@@ -1534,9 +1558,7 @@ AS
         then
             raise_application_error( -20005, 'Mismatched <%@ block %> tag. ' || cnt_block || ' vs ' || cnt_enblock );
         end if;
-    end;
-
-
+    end validate_build_template;
 
 END teplsql;
 /

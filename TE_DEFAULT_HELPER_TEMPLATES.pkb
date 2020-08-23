@@ -80,7 +80,7 @@ $if false $then
       <TEMPLATE>CREATE OR REPLACE
 PACKAGE BODY ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
 AS
-&lt;%@ include( ${this}.function.*.body ) %&gt;\\n
+&lt;%@ include( ${this}.function.*.body, , , ,1 ) %&gt;\\n
 END;
 &lt;%= &apos;/&apos; %&gt;\\n</TEMPLATE>
       <DESCRIPTION>code to generate the BODY of the package</DESCRIPTION>
@@ -94,13 +94,13 @@ END;
       <TEMPLATE>CREATE OR REPLACE
 PACKAGE ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
 AS
-&lt;%@ include( ${this}.documentation ) %&gt;
+&lt;%@ include( ${this}.documentation, , , ,1 ) %&gt;
 
-&lt;%@ include( ${this}.type.*.specification ) %&gt;\\n
+&lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;\\n
 
-&lt;%@ include( ${this}.exception.*.specification ) %&gt;\\n
+&lt;%@ include( ${this}.exception.*.specification, , , ,1 ) %&gt;\\n
 
-&lt;%@ include( ${this}.function.*.specification ) %&gt;\\n
+&lt;%@ include( ${this}.function.*.specification, , , ,1 ) %&gt;\\n
 END;
 &lt;%= &apos;/&apos; %&gt;</TEMPLATE>
       <DESCRIPTION>code to generate the specification</DESCRIPTION>
@@ -478,12 +478,12 @@ END;
       <NAME>teplsql.helper.default.function.body</NAME>
       <TEMPLATE>&lt;%@ include( ${this}.spec ) %&gt;\\n
 AS
-&lt;%@ include( ${this}.type.*.specification ) %&gt;\\n
-&lt;%@ include( ${this}.exception.*.specification ) %&gt;\\n
-&lt;%@ include( ${this}.decl ) %&gt;\\n
-&lt;%@ include( ${this}.function.*.body ) %&gt;\\n
+&lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.exception.*.specification, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.decl, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.function.*.body, , , ,1 ) %&gt;\\n
 BEGIN
-&lt;%@ include( ${this}.bdy ) %&gt;\\n
+&lt;%@ include( ${this}.bdy, , , ,1 ) %&gt;\\n
 END &lt;%@ include( ${this}.name ) %&gt;;\\n</TEMPLATE>
       <DESCRIPTION>Body of the function for a Package</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
