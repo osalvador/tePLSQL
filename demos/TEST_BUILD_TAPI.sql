@@ -1,4 +1,4 @@
-create or replace procedure test_build_tapi
+create or replace procedure test_build_tapi( indent_string in varchar2 default '    ' )
 as
     xml_dat xmltype;
     str     varchar2(50);
@@ -36,6 +36,8 @@ begin
     p_vars( teplsql.g_set_max_includes )      := 500;
     p_vars( teplsql.g_set_globbing_mode )     := teplsql.g_globbing_mode_on;
     p_vars( teplsql.g_set_render_mode )       := teplsql.g_render_mode_normal;
+    p_vars( teplsql.g_set_indention_string )  := indent_string;
+    
 
     -- the template
     p_template     := '<%@ include( ' || str || '.main ) %>';

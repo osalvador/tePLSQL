@@ -20,6 +20,7 @@ AS
    g_set_globbing_mode       constant t_template_variable_name := 'tePLSQL.globbing.mode';
    g_set_globbing_separator  constant t_template_variable_name := 'tePLSQL.globbing.separator';
    g_set_render_mode         constant t_template_variable_name := 'tePLSQL.render.mode';
+   g_set_indention_string    constant t_template_variable_name := 'tePLSQL.indention.string';
 
    -- Valid values for globbing mode
    g_globbing_mode_off      constant t_template_variable_value := 'off';

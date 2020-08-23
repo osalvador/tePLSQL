@@ -14,12 +14,14 @@ AS
    g_globbing_mode_default       constant t_template_variable_value := g_globbing_mode_off;
    g_globbing_separator_default  constant t_template_variable_value := chr(10);
    g_render_mode_default         constant t_template_variable_value := g_render_mode_normal;
+   g_indent_string_default       constant t_template_variable_value := '    ';
 
    -- various system options
    g_max_includes        int := g_max_includes_default;
    g_globbing_mode       t_template_variable_value := g_globbing_mode_default;
    g_globbing_separator  t_template_variable_value := g_globbing_separator_default;
    g_render_mode         t_template_variable_value := g_render_mode_default;
+   g_indent_string       t_template_variable_value := g_indent_string_default;
 
    -- run time global variables
    g_buffer          CLOB;
@@ -44,6 +46,7 @@ AS
       g_globbing_mode       := g_globbing_mode_default;
       g_globbing_separator  := g_globbing_separator_default;
       g_render_mode         := g_render_mode_default;
+      g_indent_string       := g_indent_string_default;
    end reset_system_defaults;
 
    /**
@@ -153,6 +156,8 @@ AS
                 ELSE
                     g_render_mode := g_render_mode_default;
                 end if;
+              WHEN g_set_indention_string THEN
+                g_indent_string := l_value;
             ELSE
                NULL;
          END CASE;
@@ -1052,7 +1057,7 @@ AS
         -- indent buffer results
         g_buffer2( g_indention_level ) :=
             regexp_replace( g_buffer2( g_indention_level ) , '^'
-                            ,'    ', 1, 0, 'm' );
+                            ,g_indent_string, 1, 0, 'm' );
 
         -- indention level decrement
         g_indention_level := greatest( g_indention_level - 1, 1);
