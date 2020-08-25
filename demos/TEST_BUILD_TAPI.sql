@@ -58,17 +58,17 @@ $if false $then
 <%@ template( template_name=TestBuild ) %>
 <%@ extends object_type="build" object_name="TAPI" %>
   <%@ extends object_type="package" object_name="simple_tapi" %>
-    <%@ block fragment_name="name" %>POC_${table_name}_API<%@ enblock %>
+    <%@ block block_name="name" %>POC_${table_name}_API<%@ enblock %>
     <%@ extends object_type="exception" object_name="not_yet_implemented" %>
-      <%@ block fragment_name="text" %>'This feature has not yet been implemented.'<%@ enblock %>
-      <%@ block fragment_name="number" %>-20100<%@ enblock %>
+      <%@ block block_name="text" %>'This feature has not yet been implemented.'<%@ enblock %>
+      <%@ block block_name="number" %>-20100<%@ enblock %>
     <%@ enextends %>
     <%@ extends object_type="function" object_name="ins" %>
-      <%@ block fragment_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
-      <%@ block fragment_name="documentation" %>/**
+      <%@ block block_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
+      <%@ block block_name="documentation" %>/**
 * new row entry
 */<%@ enblock %>
-      <%@ block fragment_name="bdy" %>
+      <%@ block block_name="bdy" %>
 insert into ${schema}.${table_name} (
 <% for curr in "Columns"( '${schema}', '${table_name}', '-VC -ID' ) loop %>
                 <%= curr.comma_first || curr.column_name %>\\\\n
@@ -90,11 +90,11 @@ end loop; %>
             );<%@ enblock %>
     <%@ enextends %>
     <%@ extends object_type="function" object_name="upd" %>
-      <%@ block fragment_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
-      <%@ block fragment_name="documentation" %>/**
+      <%@ block block_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
+      <%@ block block_name="documentation" %>/**
 * updates a row
 */<%@ enblock %>
-      <%@ block fragment_name="bdy" %>-- THIS = ${this}
+      <%@ block block_name="bdy" %>-- THIS = ${this}
 -- P = ${super}
 -- GP = ${super.super}
 update ${schema}.${table_name} a
@@ -109,11 +109,11 @@ update ${schema}.${table_name} a
 ;<%@ enblock %>
     <%@ enextends %>
     <%@ extends object_type="function" object_name="del" %>
-      <%@ block fragment_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
-      <%@ block fragment_name="documentation" %>/**
+      <%@ block block_name="spec" %>procedure <%@ include( ${this}.name ) %>( rcd in ${schema}.${table_name}%rowtype )<%@ enblock %>
+      <%@ block block_name="documentation" %>/**
 * deletes a record
 */<%@ enblock %>
-      <%@ block fragment_name="bdy" %>
+      <%@ block block_name="bdy" %>
 delete from ${schema}.${table_name} a
     where 1=1
 <% for curr in "Columns"( '${schema}', '${table_name}', 'PK' ) loop %>

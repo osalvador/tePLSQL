@@ -1382,14 +1382,14 @@ AS
                          from xmltable( '/block'
                                     passing curr.modifications
                                     columns
-                                        fragment_name varchar2(50) path '/block/@fragment_name',
-                                        fragment_code clob         path '/block'
+                                        block_name varchar2(50) path '/block/@block_name',
+                                        block_code clob         path '/block'
                                 ) b
                             )
             loop
     
                 -- STEP 4 - get new template
-                clob_buff := mcur.fragment_code;
+                clob_buff := mcur.block_code;
     
                 -- STEP 5 - render TAGS
                 p_vars( g_set_render_mode ) := g_render_mode_hierarch_tags_only;
@@ -1398,7 +1398,7 @@ AS
                 result_clob := render( p_vars, clob_buff, err_clob );
                 
                 -- STEP 6
-                set_template( this_object_name || '.' || mcur.fragment_name, result_clob );
+                set_template( this_object_name || '.' || mcur.block_name, result_clob );
     
             end loop;
             
