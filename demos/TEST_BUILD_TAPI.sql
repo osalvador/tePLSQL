@@ -1,11 +1,13 @@
-create or replace procedure test_build_tapi( indent_string in varchar2 default '    ' )
+create or replace procedure test_build_tapi( schema        in varchar2 default USER
+                                            ,table_name    in varchar2 default 'TE_TEMPLATES'
+                                            ,indent_string in varchar2 default '    ')
 as
     p_vars           teplsql.t_assoc_array;
     v_returnvalue    clob;
     p_template       clob;
 begin
-    p_vars( 'schema' )                        := USER;
-    p_vars( 'table_name' )                    := 'TE_TEMPLATES';
+    p_vars( 'schema' )                        := NVL( schema, USER );
+    p_vars( 'table_name' )                    := nvl( table_name, 'TE_TEMPLATES' );
     p_vars( teplsql.g_set_indention_string )  := indent_string;
 
 
