@@ -27,7 +27,8 @@ AS
    g_buffer          CLOB;
    g_indention_level int := 1;
    g_max_indention_level constant int := 20;
-   
+   g_build_block         varchar2(25) := 'main';
+ 
    type t_indentable_clob is varray(20) of clob;
    g_buffer2     t_indentable_clob := new t_indentable_clob();
    
@@ -224,6 +225,12 @@ AS
          l_key       := SUBSTR (c1.text, 1, INSTR (c1.text, '=') - 1);
          l_value     := SUBSTR (c1.text, INSTR (c1.text, '=') + 1);
          p_vars ('template_' || l_key) := l_value;
+
+         if l_key = 'build'
+         then
+            g_build_block := regexp_replace( l_value, '[\(\)]', '' );
+         end if;
+
       END LOOP;
    END set_template_directive;
 
@@ -1564,6 +1571,78 @@ AS
             raise_application_error( -20005, 'Mismatched <%@ block %> tag. ' || cnt_block || ' vs ' || cnt_enblock );
         end if;
     end validate_build_template;
+
+   function process_build  (p_vars            IN t_assoc_array DEFAULT null_assoc_array
+                         , p_template_name   IN VARCHAR2 DEFAULT NULL
+                         , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
+                         , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
+                         , p_schema          IN VARCHAR2 DEFAULT NULL )
+      return clob
+    as
+        l_vars  t_assoc_array;
+        build_clob         clob;
+        build_xml          xmltype;
+        final_clob         clob;
+        template_to_render clob;
+        l_error_template   clob;
+        
+        build_template_name  te_templates.name%type;
+        build_block          te_templates.name%type;
+    begin
+        l_vars := p_vars;
+        
+        -- sanity check of vars
+        if l_vars.exists( g_set_render_mode ) and nvl( l_vars(g_set_render_mode) , '----' ) != g_render_mode_build
+        then
+            raise_application_error( -20009, 'Cannot build with render mode "' || l_vars(g_set_render_mode) || '"' );
+        end if;
+        
+--        dbms_output.put_line( 'fetching build template' );
+        l_vars( teplsql.g_set_render_mode ) := teplsql.g_render_mode_fetch_only;
+        build_clob := teplsql.process( l_vars, p_template_name, p_object_name, p_object_type, p_schema );
+    
+--        dbms_output.put_line( 'converting to XML clob' );
+        teplsql.validate_build_template( build_clob );
+        build_clob := teplsql.convert_extends( build_clob );
+    
+--        dbms_output.put_line( 'converting to XMLType');
+        build_xml := xmltype ( build_clob );
+
+--        dbms_output.put_line( 'creating templates from Build XML' );    
+        build_template_name := teplsql.build_code_from_xml( build_xml, 'build.temp.' || to_char( sysdate, 'yyyy-mm-dd-hh24:mi:ss') );
+        
+        if l_vars.exists( g_set_build_block )
+        then
+            g_build_block := l_vars( g_set_build_block );
+        end if;
+        
+        build_block := build_template_name || '.' || g_build_block;
+        
+        -- generator bare-minimum system options
+        l_vars( g_set_max_includes )      := 500;
+        l_vars( g_set_globbing_mode )     := g_globbing_mode_on;
+        l_vars( g_set_render_mode )       := g_render_mode_normal;
+    
+        -- the template
+        template_to_render     := '<%@ include( ' || build_block || ' ) %>';
+        
+        dbms_output.put_line( template_to_render );
+
+        -- actual render
+        final_clob  := teplsql.render( p_vars => l_vars
+                                      ,p_template => template_to_render
+                                      ,p_error_template => l_error_template
+                            );
+
+        return final_clob;
+
+    exception
+        when others then
+            dbms_output.put_line( l_error_template );
+            raise;
+        
+        end process_build;
+
 
 END teplsql;
 /

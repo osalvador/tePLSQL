@@ -21,6 +21,7 @@ AS
    g_set_globbing_separator  constant t_template_variable_name := 'tePLSQL.globbing.separator';
    g_set_render_mode         constant t_template_variable_name := 'tePLSQL.render.mode';
    g_set_indention_string    constant t_template_variable_name := 'tePLSQL.indention.string';
+   g_set_build_block         constant t_template_variable_name := 'tePLSQL.build.block';
 
    -- Valid values for globbing mode
    g_globbing_mode_off      constant t_template_variable_value := 'off';
@@ -32,6 +33,7 @@ AS
    g_render_mode_hierarch_tags_only    constant t_template_variable_value := 'parents';
    g_render_mode_fetch_only            constant t_template_variable_value := 'fetch';
    g_render_mode_normal                constant t_template_variable_value := 'all';
+   g_render_mode_build                 constant t_template_variable_value := 'build';
 
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE
@@ -99,6 +101,13 @@ AS
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;
       
+   function process_build  (p_vars            IN t_assoc_array DEFAULT null_assoc_array
+                         , p_template_name   IN VARCHAR2 DEFAULT NULL
+                         , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
+                         , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
+                         , p_schema          IN VARCHAR2 DEFAULT NULL )
+      RETURN CLOB;
+
     function copy_helper_template( to_base_name in varchar2
                               ,from_base_name in varchar2
                               ,object_type in varchar2

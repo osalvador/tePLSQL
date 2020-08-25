@@ -1,61 +1,20 @@
 create or replace procedure test_build_tapi( indent_string in varchar2 default '    ' )
 as
-    xml_dat xmltype;
-    str     varchar2(50);
-    buffer_clob clob;
-    t_clob clob;
-    txt_clob clob;
-    att_clob clob;
-    build_xml xmltype;
-
     p_vars           teplsql.t_assoc_array;
     v_returnvalue    clob;
     p_template       clob;
-    p_error_template clob;
 begin
-    dbms_output.put_line( 'fetching build template' );
-    p_vars( teplsql.g_set_render_mode ) := teplsql.g_render_mode_fetch_only;
-    buffer_clob := teplsql.process( p_vars, 'TestBuild', 'TEST_BUILD_TAPI', 'PROCEDURE' );
-
-    dbms_output.put_line( 'converting to XML clob' );
-    teplsql.validate_build_template( buffer_clob );
-    buffer_clob := teplsql.convert_extends( buffer_clob );
-
-    dbms_output.put_line( 'converting to XMLType');
-    build_xml := xmltype ( buffer_clob );
-
-    dbms_output.put_line( 'creating templates from Build XML' );    
-    str := teplsql.build_code_from_xml( build_xml, 'stuff.morestufff' );
-
-    dbms_output.put_line( 'Rendering "' || str || '.main"' );
-    -- template variables
-    p_vars( 'schema' )                        := 'TEPLSQL$SYS';
+    p_vars( 'schema' )                        := USER;
     p_vars( 'table_name' )                    := 'TE_TEMPLATES';
-
-    -- generator system options
-    p_vars( teplsql.g_set_max_includes )      := 500;
-    p_vars( teplsql.g_set_globbing_mode )     := teplsql.g_globbing_mode_on;
-    p_vars( teplsql.g_set_render_mode )       := teplsql.g_render_mode_normal;
     p_vars( teplsql.g_set_indention_string )  := indent_string;
-    
 
-    -- the template
-    p_template     := '<%@ include( ' || str || '.main ) %>';
 
-    -- actual render
-    v_returnvalue  := teplsql.render( p_vars => p_vars
-                                     ,p_template => p_template
-                                     ,p_error_template => p_error_template
-                        );
+    v_returnvalue := teplsql.process_build( p_vars, 'TestBuild', 'TEST_BUILD_TAPI', 'PROCEDURE' );
 
     dbms_output.put_line( v_returnvalue );
-exception
-    when others then
-        dbms_output.put_line( p_error_template );
-        raise;
 
 $if false $then
-<%@ template( template_name=TestBuild ) %>
+<%@ template( template_name=TestBuild, build=main ) %>
 <%@ extends object_type="build" object_name="TAPI" %>
   <%@ extends object_type="package" object_name="simple_tapi" %>
     <%@ block block_name="name" %>POC_${table_name}_API<%@ enblock %>
