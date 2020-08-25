@@ -1095,19 +1095,66 @@ To modify the code in a Helper Template, place the new template code between `<%
 
 You can "extend" other helper templates within a helper template. For exmple, you can add a function to a function of a package.
 
-example:
+example (in `demos/BUILD_HELLO_WORLD.sql` ):
 ```sql
-<%@ extends object_type="package" object_name="my_pkg" %>
-<%@ extends object_type="function" object_name="outer_f" %>
-<%@ extends object_type="function" object_name="inner_f" %>
-<%@ enextends %>
-<%@ enextends %>
+<%@ template( template_name=HelloWorld ) %>
+ <%@ extends object_type="package" object_name="my_pkg" %>
+  <%@ extends object_type="function" object_name="outer_f" %>
+   <%@ block block_name="spec" %>procedure <%@ include( ${this}.name ) %><%@ enblock %>
+   <%@ block block_name="bdy" %><%@ include( ${this}.function.inner_f.name ) %>;
+  <%@ enblock %>
+  <%@ extends object_type="function" object_name="inner_f" %>
+   <%@ block block_name="spec" %>procedure <%@ include( ${this}.name ) %><%@ enblock %>
+   <%@ block block_name="bdy" %>dbms_output.put_line( 'Hello World' );<%@ enblock %>
+  <%@ enextends %>
+ <%@ enextends %>
 <%@ enextends %>
 ```
 
 results in
 ```plsql
--- TBD
+CREATE OR REPLACE
+PACKAGE TEPLSQL$SYS.my_pkg
+AS
+    /**
+          Place Description of Package here
+    @headcom
+    */
+
+
+
+
+
+    /**
+      Function outer_f*/
+    procedure outer_f;
+END;
+/
+CREATE OR REPLACE
+PACKAGE BODY TEPLSQL$SYS.my_pkg
+AS
+    procedure outer_f
+    AS
+    
+    
+        -- set variables here
+        procedure inner_f
+        AS
+        
+        
+            -- set variables here
+        
+        BEGIN
+            dbms_output.put_line( 'Hello World' );
+        END inner_f;
+    
+    BEGIN
+        inner_f;
+          
+    END outer_f;
+
+END;
+/
 ```
 
 #### Default Helper Templates
