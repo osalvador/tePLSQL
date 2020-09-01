@@ -128,6 +128,8 @@ AS
     
     procedure begin_indent(n in int default null);
     procedure end_indent;
+    procedure set_tab( n in int );
+    procedure goto_tab( n in int );
 
 END teplsql;
 /

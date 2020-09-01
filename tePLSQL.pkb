@@ -24,14 +24,19 @@ AS
    g_indent_string       t_template_variable_value := g_indent_string_default;
 
    -- run time global variables
-   g_buffer          CLOB;
-   g_indention_level int := 1;
+   g_buffer              CLOB;
+   g_indention_level     int := 1;
    g_max_indention_level constant int := 20;
    g_build_block         varchar2(25) := 'main';
  
+    -- indention globals
    type t_indentable_clob is varray(20) of clob;
    g_buffer2     t_indentable_clob := new t_indentable_clob();
    
+   type t_tab_set is table of int index by pls_integer;
+   g_tab_set    t_tab_set;
+   
+   -- exceptions for flow control
    only_hierarch_tags_complete exception;
    only_fetch_complete         exception;
 
@@ -1643,6 +1648,36 @@ AS
         
         end process_build;
 
+    function get_last_line_length return int
+    as
+    begin
+        if  g_buffer2( g_indention_level ) like '%' || chr(10)
+        then
+            return 0;
+        end if;
+        
+        return length( g_buffer2( g_indention_level ) ) - regexp_instr( g_buffer2( g_indention_level ), chr(10) || '[^' || chr(10) || ']*$' );
+    end get_last_line_length;
+    
+    procedure set_tab( n in int )
+    as
+    begin
+        g_tab_set(n) := get_last_line_length;
+    end set_tab;
+    
+    procedure goto_tab( n in int )
+    as
+        current_pos int;
+    begin
+        current_pos := get_last_line_length;
+        if g_tab_set.exists(n)
+        then
+            if current_pos < g_tab_set(n)
+            then
+                p( rpad( ' ', g_tab_set(n) - current_pos, ' ' ) );
+            end if;
+        end if;
+    end goto_tab;
 
 END teplsql;
 /

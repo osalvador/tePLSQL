@@ -33,6 +33,7 @@ For a quick look see [basic example](#basic-example). The best example of use te
 - [Debugging tePLSQL templates](#debug)
 - [tePLSQL API reference](#apiReference)
 - [Advance Topics](#advance)
+    + [Indention](#indention)
     + [tePLSQL Engine's Options](#engineOptions)
     + [Template Globbing](#templateGlobbing)
     + [Build Templates](#BuildTemplates)
@@ -958,6 +959,18 @@ PROCEDURE output_clob(p_clob in CLOB);
 
 <a name="advance"></a>
 ## Advance Topics
+
+<a name="indention"></a>
+### Indention
+There are two methods to control indention of the rendered code.
+
+1. Indent the whole sub-template
+1. Set/Goto Tab stops
+
+Method 1 is done via 5th parameter of an `<% include() %>` directive.
+
+Method 2 uses public calls `teplsql.set_tab( *n* )` and `teplsql.goto_tab( *n* )`.
+
 
 <a name="engineOptions"></a>
 ### tePLSQL Engine Options
