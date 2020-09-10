@@ -77,11 +77,15 @@ $if false $then
     </template>
     <template>
       <NAME>teplsql.helper.default.package.body</NAME>
-      <TEMPLATE>CREATE OR REPLACE
-PACKAGE BODY ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
-AS
+      <TEMPLATE>create or replace
+package body &lt;%= lower( &apos;${schema}&apos; ) %&gt;.&lt;%@ include( ${this}.name ) %&gt;\\n
+as
+&lt;%@ include( ${this}.type.private.*.specification, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.SQL.private.*.specification, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.exception.private.*.specification, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.function.private.*.body, , , ,1 ) %&gt;\\n
 &lt;%@ include( ${this}.function.*.body, , , ,1 ) %&gt;\\n
-END;
+end;
 &lt;%= &apos;/&apos; %&gt;\\n</TEMPLATE>
       <DESCRIPTION>code to generate the BODY of the package</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
@@ -91,9 +95,11 @@ END;
     </template>
     <template>
       <NAME>teplsql.helper.default.package.specification</NAME>
-      <TEMPLATE>CREATE OR REPLACE
-PACKAGE ${schema}.&lt;%@ include( ${this}.name ) %&gt;\\n
-AS
+      <TEMPLATE>create or replace
+package &lt;%= lower(&apos;${schema}&apos;) %&gt;.&lt;%@ include( ${this}.name ) %&gt;\\n
+&lt;%@ include( ${this}.authid, , , ,1 ) %&gt;\\n
+&lt;%@ include( ${this}.accessibility, , , ,1 ) %&gt;\\n
+as
 &lt;%@ include( ${this}.documentation, , , ,1 ) %&gt;
 
 &lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;\\n
@@ -102,7 +108,8 @@ AS
 
 &lt;%@ include( ${this}.function.*.specification, , , ,1 ) %&gt;\\n
 END;
-&lt;%= &apos;/&apos; %&gt;</TEMPLATE>
+&lt;%= &apos;/&apos; %&gt;
+</TEMPLATE>
       <DESCRIPTION>code to generate the specification</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -378,6 +385,8 @@ END;
                        o.owner
                       ,o.table_name
                       ,o.column_name
+                      ,rpad(o.column_name
+                          ,max(length(o.column_name)) over () + 1 ) column_name_rpad
                       ,o.data_type
                       ,o.data_type_mod
                       ,o.data_type_owner
@@ -409,6 +418,28 @@ END;
                   select *
                   from data d
                   order by OWNER,TABLE_NAME,ORDER_BY;
+
+    function template_exists( template_name in varchar2) return boolean
+    as
+      l_regexp   te_templates.name%type;
+      l_dummy    varchar2(1);
+    begin
+      l_regexp := regexp_replace( template_name, &apos;([.(){}\])&apos;, &apos;\\\1&apos;);
+      l_regexp := &apos;^&apos; || regexp_replace( l_regexp, &apos;\*&apos;, &apos;[^.]+&apos; ) || &apos;$&apos;;
+
+      select &apos;x&apos; into l_dummy
+      from dual
+      where exists (
+        select null
+        from te_templates
+        where regexp_like( name, l_regexp )
+      );
+
+      return true;
+    exception
+      when no_data_found then
+        return false;
+    end;
 %&gt;
 
 /*
@@ -431,8 +462,8 @@ END;
       <NAME>teplsql.helper.default.SQL.documentation</NAME>
       <TEMPLATE>/**
   SQL &lt;%@ include( ${this}.name ) %&gt;
-
-*/</TEMPLATE>
+*/
+</TEMPLATE>
       <DESCRIPTION>Documentation for the SQL in PL/doc format</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -442,8 +473,9 @@ END;
     <template>
       <NAME>teplsql.helper.default.exception.documentation</NAME>
       <TEMPLATE>/**
-  Something didn&apos;t do what it was suppose to
-*/</TEMPLATE>
+  Something didn&apos;t do what it was suppose to do.
+*/
+</TEMPLATE>
       <DESCRIPTION>Documentation of the exception in PL/Doc format</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -453,8 +485,9 @@ END;
     <template>
       <NAME>teplsql.helper.default.function.documentation</NAME>
       <TEMPLATE>/**
-  Function &lt;%@ include( ${this}.name ) %&gt;
-*/</TEMPLATE>
+  Function &lt;%@ include( ${this}.name ) %&gt;\\n
+*/
+</TEMPLATE>
       <DESCRIPTION>PL/Doc encoded documentation</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -477,14 +510,19 @@ END;
     <template>
       <NAME>teplsql.helper.default.function.body</NAME>
       <TEMPLATE>&lt;%@ include( ${this}.spec ) %&gt;\\n
-AS
-&lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;\\n
-&lt;%@ include( ${this}.exception.*.specification, , , ,1 ) %&gt;\\n
-&lt;%@ include( ${this}.decl, , , ,1 ) %&gt;\\n
-&lt;%@ include( ${this}.function.*.body, , , ,1 ) %&gt;\\n
-BEGIN
+as
+&lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;
+&lt;%@ include( ${this}.exception.*.specification, , , ,1 ) %&gt;
+&lt;%@ include( ${this}.decl, , , ,1 ) %&gt;
+&lt;%@ include( ${this}.function.*.body, , , ,1 ) %&gt;
+\\nBEGIN
 &lt;%@ include( ${this}.bdy, , , ,1 ) %&gt;\\n
-END &lt;%@ include( ${this}.name ) %&gt;;\\n</TEMPLATE>
+&lt;% if teplsql.template_exists( &apos;${this}.exceptions-block.*.body&apos; ) then %&gt;
+exception
+&lt;%@ include( ${this}.exceptions-block.*.body, , , ,1 ) %&gt;\\n
+&lt;% end if; %&gt;
+end &lt;%@ include( ${this}.name ) %&gt;;
+</TEMPLATE>
       <DESCRIPTION>Body of the function for a Package</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -493,8 +531,9 @@ END &lt;%@ include( ${this}.name ) %&gt;;\\n</TEMPLATE>
     </template>
     <template>
       <NAME>teplsql.helper.default.function.specification</NAME>
-      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;\\n
-&lt;%@ include( ${this}.spec ) %&gt;;</TEMPLATE>
+      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;
+&lt;%@ include( ${this}.spec ) %&gt;;
+</TEMPLATE>
       <DESCRIPTION>Specification of the function for a Package</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -540,10 +579,11 @@ as
     </template>
     <template>
       <NAME>teplsql.helper.default.exception.specification</NAME>
-      <TEMPLATE>&lt;%@ include( ${this}.name ) %&gt;  exception;
+      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;
+&lt;%@ include( ${this}.name ) %&gt;  exception;
 &lt;%@ include( ${this}.constant_number_name ) %&gt; constant int := &lt;%@ include( ${this}.number ) %&gt;;
-&lt;%@ include( ${this}.constant_text_name ) %&gt; constant varchar2(4000) := &apos;&lt;%@ include( ${this}.name ) %&gt;&apos;;
-pragma exception_init( &lt;%@ include( ${this}.name ) %&gt;, &lt;%@ include( ${this}.constant_number_name ) %&gt; );</TEMPLATE>
+pragma exception_init( &lt;%@ include( ${this}.name ) %&gt;, &lt;%@ include( ${this}.constant_number_name ) %&gt; );
+</TEMPLATE>
       <DESCRIPTION>specification for all parts of an exception.</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -571,7 +611,8 @@ pragma exception_init( &lt;%@ include( ${this}.name ) %&gt;, &lt;%@ include( ${t
     <template>
       <NAME>teplsql.helper.default.exception.exception</NAME>
       <TEMPLATE>when &lt;%@ include( ${this}.name ) %&gt; then
-    &lt;%@ include( ${this}.plsql ) %&gt;</TEMPLATE>
+    &lt;%@ include( ${this}.raise_error ) %&gt;
+</TEMPLATE>
       <DESCRIPTION>Exception where clause for this exception.</DESCRIPTION>
       <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
       <CREATED_DATE>2020-08-15</CREATED_DATE>
@@ -634,6 +675,45 @@ END;
       <CREATED_DATE>2020-08-15</CREATED_DATE>
       <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
       <MODIFIED_DATE>2020-08-15</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.helper.default.package.authid</NAME>
+      <TEMPLATE>authid current_user</TEMPLATE>
+      <DESCRIPTION>Set package as Definer&apos;s Rights or Invoker&apos;s Rights (default)</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-29</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-29</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.helper.default.package.accessibility</NAME>
+      <TEMPLATE>-- accessibile by all</TEMPLATE>
+      <DESCRIPTION>Accessibility List</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-29</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-29</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.helper.default.SQL.specification</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.documentation ) %&gt;
+cursor &lt;%@ include( ${this}.spec ) %&gt; is
+&lt;%@ include( ${this}.SQL, , , ,1 ) %&gt;;
+</TEMPLATE>
+      <DESCRIPTION>Creates a CURSOR for PL/SQL</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-30</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-30</MODIFIED_DATE>
+    </template>
+    <template>
+      <NAME>teplsql.helper.default.SQL.spec</NAME>
+      <TEMPLATE>&lt;%@ include( ${this}.cursor_name ) %&gt;</TEMPLATE>
+      <DESCRIPTION>spec portion of a CURSOR</DESCRIPTION>
+      <CREATED_BY>TEPLSQL$SYS</CREATED_BY>
+      <CREATED_DATE>2020-08-30</CREATED_DATE>
+      <MODIFIED_BY>TEPLSQL$SYS</MODIFIED_BY>
+      <MODIFIED_DATE>2020-08-30</MODIFIED_DATE>
     </template>
   </templates>
 </teplsql>
