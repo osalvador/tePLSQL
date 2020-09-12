@@ -102,6 +102,8 @@ package &lt;%= lower(&apos;${schema}&apos;) %&gt;.&lt;%@ include( ${this}.name )
 as
 &lt;%@ include( ${this}.documentation, , , ,1 ) %&gt;
 
+&lt;%@ include( ${this}.SQL.*.specification, , , ,1 ) %&gt;\\n
+
 &lt;%@ include( ${this}.type.*.specification, , , ,1 ) %&gt;\\n
 
 &lt;%@ include( ${this}.exception.*.specification, , , ,1 ) %&gt;\\n
