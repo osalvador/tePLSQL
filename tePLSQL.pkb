@@ -1426,6 +1426,8 @@ AS
         block_att_clob clob;
         block_txt_clob clob;
         block_final_clob clob;
+        block_directive  clob;
+        block_options    te_syntax.t_block_parameters;
         
         first_extends_pos int;
         last_extends_pos  int;
@@ -1474,18 +1476,22 @@ AS
             anti_infinite_loop := anti_infinite_loop + 1;
             -- find <block> of text
             block_tag_clob     := regexp_substr( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>',1,1,'n');
-            block_att_clob     := regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock ?%>', '\1',1,1,'n');
+            
+            block_directive    := regexp_substr( block_final_clob,'<%@ *block([^>]*)%>',1,1,'n');
+            block_options      := te_syntax.parse_block_declarative( block_directive );
             
             -- convert text to XML
-            select xmlelement("block", regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock *%>', '\2',1,1,'n') ).getclobval()
+            select xmlelement("block", xmlattributes( block_options.block_name as "block_name" )
+                          ,regexp_replace( block_tag_clob,'<%@ *block([^>]*)%>(.*)<%@ *enblock *%>', '\2',1,1,'n') ).getclobval()
                 into block_txt_clob
             from dual;
             
             -- add attributes back to XML tag
-            block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
+--            block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
             
             -- replace text
-            block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
+--            block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
+            block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_txt_clob, 1,1,'n');
         end loop;
         
         return  block_final_clob || extends_clob;
@@ -1499,6 +1505,8 @@ AS
         
         extends_clob clob;
         extends_att  clob;
+        extends_directive clob;
+        extends_attributes te_syntax.t_extends_parameters;
 
         start_txt_pos int;
         end_txt_pos   int;
@@ -1525,8 +1533,15 @@ AS
                 end_tag_pos    := regexp_instr(l_clob, '<%@ *enextends *%>',start_txt_pos,1,1,'n');
                 
                 -- get the attributes
-                extends_att := regexp_replace( regexp_substr( l_clob, '<%@ *extends([^>]*?)%>', regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,0 ,'n') )
-                                                ,'<%@ *?extends([^>]*?)%>', '\1');
+                extends_directive  := regexp_substr( l_clob, '<%@ *extends\(([^>]*?)\) *%>',1,cnt, 'n' );
+                extends_attributes := te_syntax.parse_extends_declarative( extends_directive );
+                
+--                extends_att := regexp_replace( regexp_substr( l_clob, '<%@ *extends([^>]*?)%>', regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,0 ,'n') )
+--                                                ,'<%@ *?extends([^>]*?)%>', '\1');
+
+                extends_att := 'object_type="' || extends_attributes.node_type
+                            || '" object_name="' || extends_attributes.node_name
+                            || '" base_name="' || extends_attributes.base_name || '"';
                 -- and adjust them for XML
                 -- TODO
                 -- dbms_output.put_line( '  attributes= ~' || extends_att || '~' );
@@ -1646,7 +1661,7 @@ AS
             dbms_output.put_line( l_error_template );
             raise;
         
-        end process_build;
+    end process_build;
 
     function get_last_line_length return int
     as
@@ -1678,6 +1693,28 @@ AS
             end if;
         end if;
     end goto_tab;
+
+    function template_exists( template_name in varchar2) return boolean
+    as
+      l_regexp   te_templates.name%type;
+      l_dummy    varchar2(1);
+    begin
+      l_regexp := regexp_replace( template_name, '([.(){}\])', '\\\1');
+      l_regexp := '^' || regexp_replace( l_regexp, '\*', '[^.]+' ) || '$';
+
+      select 'x' into l_dummy
+      from dual
+      where exists (
+        select null
+        from te_templates
+        where regexp_like( name, l_regexp )
+      );
+
+      return true;
+    exception
+      when no_data_found then
+        return false;
+    end template_exists;
 
 END teplsql;
 /
