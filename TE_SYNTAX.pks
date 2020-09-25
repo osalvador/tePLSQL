@@ -46,7 +46,28 @@ as
   block_command   constant language_token := '^<%@' || nspace || 'block' || op || nspace || '(' || single_word || ')' || nspace || cp || nspace || '%>$';
   enblock_command constant language_token := '^enblock$';
   
+  /**
+  * Describs the <%@ include() %> syntax
+  *
+  * Valid format:
+  * - include( template-name [[[[,object-name] ,object-type] ,schema] ,indent] [,key=val_parms]* )
+  **/
+  include_command constant language_token := '^<%@' || nspace || 'include' || op || nspace || '('
+              || single_word || '(' || comma || '(' || single_word || ')?){0,5}(' || comma || key_value || ')*'
+              || ')' || nspace || cp || nspace || '%>$';
+  
 
+  /**
+  * Describs the <%@ template() %> syntax
+  *
+  * Valid format:
+  * - template( key=val_parms [,key=val_parms]* )
+  *
+  *  HOWEVER: A key-value pair for "template_name" must exists
+  **/
+  template_command constant language_token := '^<%@' || nspace || 'template' || op || nspace || '('
+               || key_value || '(' || comma || key_value || ')*)' || nspace || cp || nspace || '%>$';
+  
   /**
   * TYPES for parsed Directives
   */
@@ -69,6 +90,14 @@ as
                                        ,node_name t_param
                                        ,base_name t_param
                                        ,options   t_key_value );
+  type t_include_parameters is record ( template_name t_param
+                                       ,object_name   t_object_name
+                                       ,object_type   t_object_name
+                                       ,schema        t_object_name
+                                       ,indent        int 
+                                       ,options       t_key_value );
+  type t_template_parameters is record ( template_name t_param
+                                        ,options       t_key_value );
 
   /**
   * common EXCEPTIONS
@@ -109,6 +138,22 @@ as
   * @returns the paarsed argument
   */
   function parse_extends_declarative( p_txt in varchar2) return t_extends_parameters;
+  
+  /**
+  * Validate the 'template' Template Directive and parses its arguments
+  *
+  * @param p_txt  A string containing the full Template Directive
+  * @returns the paarsed argument
+  */
+  function parse_template_declarative( p_txt in varchar2 ) return t_template_parameters;
+
+  /**
+  * Validate the 'include' Template Directive and parses its arguments
+  *
+  * @param p_txt  A string containing the full Template Directive
+  * @returns the paarsed argument
+  */
+  function parse_include_declarative( p_txt in varchar2 ) return t_include_parameters;
 
 end te_syntax;
 /
