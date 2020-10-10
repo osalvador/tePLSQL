@@ -260,7 +260,6 @@ AS
          WHEN g_globbing_mode_like THEN
             FOR curr IN (
                SELECT   t.template
-                 INTO   l_template
                FROM   te_templates t
                WHERE   UPPER (t.name) like UPPER (p_inc.template_name)
                ORDER BY t.name
@@ -276,7 +275,6 @@ AS
          WHEN g_globbing_mode_regexp THEN
             FOR curr IN (
                SELECT   t.template
-                 INTO   l_template
                FROM   te_templates t
                WHERE   regexp_like(t.name, p_inc.template_name)
                ORDER BY t.name
@@ -295,7 +293,6 @@ AS
 
             FOR curr IN (
                SELECT   t.template
-                 INTO   l_template
                FROM   te_templates t
                WHERE   regexp_like(t.name, l_regexp)
                ORDER BY t.name
@@ -1306,13 +1303,6 @@ AS
       
       l_template        CLOB;
     begin
-        -- to be corrected by #43
---        select a.object_type_id
---            into copy_helper_template.object_type_id
---        from te_skeleton_objects a
---        where a.skeleton_class = copy_helper_template.helper_class
---          and a.object_type  = copy_helper_template.object_type;
-        
         -- fetch a BLOCK render hiearchal tags only
         l_vars('this')        := to_base_name || '.' || object_type || '.' || object_name;
         l_vars('object_name') := object_name;
@@ -1486,11 +1476,7 @@ AS
                 into block_txt_clob
             from dual;
             
-            -- add attributes back to XML tag
---            block_tag_clob := regexp_replace( block_txt_clob, '^<block>', '<block' || block_att_clob || '>' );
-            
             -- replace text
---            block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_tag_clob, 1,1,'n');
             block_final_clob :=  regexp_replace( block_final_clob,'<%@ *block([^>]*)%>(.*?)<%@ *enblock *%>', block_txt_clob, 1,1,'n');
         end loop;
         
@@ -1524,7 +1510,6 @@ AS
             if regexp_like(l_clob, '<%@ *extends([^>]*?)%>.*<%@ *enextends *%>','n' )
             then
                 cnt            := regexp_count(l_clob, '<%@ *?extends([^>]*?)%>',1,'n');
-                -- dbms_output.put_line( anti_infinite_loop || ' =>  ' || regexp_substr( p_clob, '<%@ *extends([^>]*?)%>', 1, cnt, 'n' ) );
     
                 start_txt_pos  := regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,1 ,'n'); -- grab last <extends>
                 end_txt_pos    := regexp_instr(l_clob, '<%@ *enextends *%>',start_txt_pos,1,0,'n'); -- grab first </extends> (after last <extends>)
@@ -1536,15 +1521,9 @@ AS
                 extends_directive  := regexp_substr( l_clob, '<%@ *extends\(([^>]*?)\) *%>',1,cnt, 'n' );
                 extends_attributes := te_syntax.parse_extends_declarative( extends_directive );
                 
---                extends_att := regexp_replace( regexp_substr( l_clob, '<%@ *extends([^>]*?)%>', regexp_instr(l_clob, '<%@ *extends([^>]*?)%>',1,cnt,0 ,'n') )
---                                                ,'<%@ *?extends([^>]*?)%>', '\1');
-
                 extends_att := 'object_type="' || extends_attributes.node_type
                             || '" object_name="' || extends_attributes.node_name
                             || '" base_name="' || extends_attributes.base_name || '"';
-                -- and adjust them for XML
-                -- TODO
-                -- dbms_output.put_line( '  attributes= ~' || extends_att || '~' );
         
                 -- calculate the replacement text
                 extends_clob := to_clob( '<extends ' || extends_att || '>' )
@@ -1617,18 +1596,14 @@ AS
             raise_application_error( -20009, 'Cannot build with render mode "' || l_vars(g_set_render_mode) || '"' );
         end if;
         
---        dbms_output.put_line( 'fetching build template' );
         l_vars( teplsql.g_set_render_mode ) := teplsql.g_render_mode_fetch_only;
         build_clob := teplsql.process( l_vars, p_template_name, p_object_name, p_object_type, p_schema );
     
---        dbms_output.put_line( 'converting to XML clob' );
         teplsql.validate_build_template( build_clob );
         build_clob := teplsql.convert_extends( build_clob );
     
---        dbms_output.put_line( 'converting to XMLType');
         build_xml := xmltype ( build_clob );
 
---        dbms_output.put_line( 'creating templates from Build XML' );    
         build_template_name := teplsql.build_code_from_xml( build_xml, 'build.temp.' || to_char( sysdate, 'yyyy-mm-dd-hh24:mi:ss') );
         
         if l_vars.exists( g_set_build_block )
