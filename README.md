@@ -1102,13 +1102,13 @@ NOTE: the resulting templates (created from a Build) are stored in `TE_TEMPLATES
 
 
 #### Extending a Helper Template
-To include/extend a Helper Template, use `<%@ extends object_type="xxx" object_name"xxx" base_name="xxxx" %>` and close with an `<%@ enextends %>`.
+To include/extend a Helper Template, use `<%@ extends( helper-type, object-name, base_name="xxxx" %>` and close with an `<%@ enextends %>`.
 
-To modify the code in a Helper Template, place the new template code between `<%@ block block_name="xxx" %>` and `<%@ enblock %>` with `block_name="xxx"` representing the section of code you want to replace.  The `<%@ block %> ... <%@ endblock %>` code should be within the `<%@ extends %> ... <%@ enextends %>` tags.
+To modify the code in a Helper Template, place the new template code between `<%@ block( *block-name* ) %>` and `<%@ enblock %>` with `*block_name*` representing the section of code you want to replace.  The `<%@ block %> ... <%@ endblock %>` code should be within the `<%@ extends %> ... <%@ enextends %>` tags and before any sub-`<%@ extends %>`.
 
 You can "extend" other helper templates within a helper template. For exmple, you can add a function to a function of a package.
 
-example (in `demos/BUILD_HELLO_WORLD.sql` ):
+example:
 ```sql
 <%@ template( template_name=HelloWorld ) %>
  <%@ extends object_type="package" object_name="my_pkg" %>
@@ -1170,6 +1170,13 @@ END;
 /
 ```
 
+See Also:
+| file | Description
+|------|-------------
+`demo/BUILD_HELLO_WORLD.sql` | A slightly more comperhensive "Hello World" example.
+`test/build_tests.pks/pkb` | Tests all options of each default Helper Templates via separate Build Template
+
+
 #### Default Helper Templates
 Helper Templates stored in the `TE_TEMPLATES` table have the format of `${base_name}.${object_type}.${block}`.  The default value for `${base_name}` is `teplsql.helper.default`.
 
@@ -1180,8 +1187,10 @@ The included default Helper Templates are:
 | package | Use this Helper Template to create a package.
 | function | Use this Helper Template to create a function/procedure.  Usually included in a `package` or `function`
 | exception | Use this Helper Template to create an `exception`.  Use this in a `package` or `function`.
-| type | Use to create a series of PL/SQL Types. Used in a `package` or `function`.
-| SQL | Used to define a `select` statement used in a View, Cursor, or CTE.
+| exceptions-block | Used to generate the `WHEN` clause(s) of the `EXCEPTION` block
+| plsql-type | Use this Helper Template to create a series of PL/SQL Types. Used in a `package` or `function`.
+| variable | Use this Helper Template to a variable/constant that is used in a `package` or `function`.
+| selecd | Used tis Helper Template to build a View, Cursor, or CTE.
 
 
 
