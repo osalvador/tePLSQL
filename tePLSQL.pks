@@ -3,10 +3,10 @@ create or replace PACKAGE teplsql
 AS
    --Define data type for Template Variable names
    SUBTYPE t_template_variable_name IS VARCHAR2 (255); 
-   
+
    --Define data type for Template Variable values
    SUBTYPE t_template_variable_value IS VARCHAR2 (32767);
-   
+
    --Define Associative Array
    TYPE t_assoc_array
    IS
@@ -19,12 +19,21 @@ AS
    g_set_max_includes        constant t_template_variable_name := 'tePLSQL.max_includes';
    g_set_globbing_mode       constant t_template_variable_name := 'tePLSQL.globbing.mode';
    g_set_globbing_separator  constant t_template_variable_name := 'tePLSQL.globbing.separator';
+   g_set_render_mode         constant t_template_variable_name := 'tePLSQL.render.mode';
+   g_set_indention_string    constant t_template_variable_name := 'tePLSQL.indention.string';
+   g_set_build_block         constant t_template_variable_name := 'tePLSQL.build.block';
 
    -- Valid values for globbing mode
    g_globbing_mode_off      constant t_template_variable_value := 'off';
    g_globbing_mode_on       constant t_template_variable_value := 'on';
    g_globbing_mode_regexp   constant t_template_variable_value := 'regexp';
    g_globbing_mode_like     constant t_template_variable_value := 'like';
+   
+   -- Valid values for reendering mode
+   g_render_mode_hierarch_tags_only    constant t_template_variable_value := 'parents';
+   g_render_mode_fetch_only            constant t_template_variable_value := 'fetch';
+   g_render_mode_normal                constant t_template_variable_value := 'all';
+   g_render_mode_build                 constant t_template_variable_value := 'build';
 
    /**
    * Output CLOB data to the DBMS_OUTPUT.PUT_LINE
@@ -91,5 +100,36 @@ AS
                    , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
                    , p_schema          IN VARCHAR2 DEFAULT NULL )
       RETURN CLOB;
+      
+   function process_build  (p_vars            IN t_assoc_array DEFAULT null_assoc_array
+                         , p_template_name   IN VARCHAR2 DEFAULT NULL
+                         , p_object_name     IN VARCHAR2 DEFAULT 'TE_TEMPLATES'
+                         , p_object_type     IN VARCHAR2 DEFAULT 'PACKAGE'
+                         , p_schema          IN VARCHAR2 DEFAULT NULL )
+      RETURN CLOB;
+
+    function copy_helper_template( to_base_name in varchar2
+                              ,from_base_name in varchar2
+                              ,object_type in varchar2
+                              ,object_name in varchar2
+                              ,use_gtt in varchar2 default null )
+                        return varchar2;
+
+    function build_code_from_xml( xml_build in xmltype, to_base_name in varchar2, use_gtt in varchar2 default null ) return varchar2;
+
+
+--    function indent_template( p_clob in clob
+--                            , indent_size in int default 0
+--                            , indent_txt  in varchar2 default '  ' )
+--                    return clob;
+
+    function convert_extends( p_clob in clob ) return clob;
+    procedure validate_build_template( template_clob in clob );
+    
+    procedure begin_indent(n in int default null);
+    procedure end_indent;
+    procedure set_tab( n in int );
+    procedure goto_tab( n in int );
+
 END teplsql;
 /
